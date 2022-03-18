@@ -22,7 +22,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <mod/gmmtmap.hpp>
 
-namespace mod {
+namespace MoD {
 
 std::vector<TreeValue> GMMTMap::getNearestNeighbors(double x, double y) const {
   std::vector<TreeValue> returned;
@@ -106,4 +106,4 @@ void GMMTMap::readFromXML(const std::string &fileName) {
       << "Read a GMMT-map with %d clusters each containing %d gaussians",
       this->M_, this->K_;
 }
-} // namespace mod
+} // namespace MoD

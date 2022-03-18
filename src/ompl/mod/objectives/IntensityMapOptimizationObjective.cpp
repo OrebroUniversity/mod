@@ -6,21 +6,21 @@
 #include <cmath>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 
 IntensityMapOptimizationObjective::IntensityMapOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si, const std::string &file_name,
     double wd, double wq, double wc)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc,
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc,
                                           MapType::IntensityMap) {
-  this->intensity_map_ = ::mod::IntensityMap(file_name);
+  this->intensity_map_ = ::MoD::IntensityMap(file_name);
   description_ = "Intensity Cost";
   // Setup a default cost-to-go heuristic:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::base::Cost IntensityMapOptimizationObjective::stateCost(
-    const ompl::base::State *s) const {
+ompl::base::Cost
+IntensityMapOptimizationObjective::stateCost(const ompl::base::State *s) const {
   return ompl::base::Cost(0.0);
 }
 
@@ -76,5 +76,5 @@ ompl::base::Cost IntensityMapOptimizationObjective::motionCost(
   si_->freeState(intermediate_states[intermediate_states.size() - 1]);
   return ompl::base::Cost(total_cost);
 }
-}  // namespace mod
-}  // namespace ompl
+} // namespace MoD
+} // namespace ompl

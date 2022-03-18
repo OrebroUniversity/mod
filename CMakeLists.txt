@@ -5,10 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Release)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS log)
 find_package(Eigen3 REQUIRED)
 find_package(ompl 1.5 REQUIRED)
 
+ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 ###########
 ## Build ##
 ###########
@@ -25,24 +26,22 @@ include_directories(
 add_library(mod SHARED
         src/cliffmap.cpp
         src/gmmtmap.cpp
-        )
-target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
-add_library(ompl_mod_objectives SHARED
         src/ompl/mod/objectives/IntensityMapOptimizationObjective.cpp
         src/ompl/mod/objectives/UpstreamCriterionOptimizationObjective.cpp
         src/ompl/mod/objectives/DTCOptimizationObjective.cpp)
+target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
 
 #############
 ## Install ##
 #############
 include(GNUInstallDirs)
 
-install(TARGETS mod ompl_mod_objectives
+install(TARGETS mod
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
         PATTERN ".svn" EXCLUDE

@@ -29,7 +29,7 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-namespace mod {
+namespace MoD {
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -138,8 +138,9 @@ public:
    * @return The mixing factor for that cluster.
    */
   inline double getMixingFactorByClusterID(size_t cluster_idx) {
-    if(cluster_idx >= this->clusters_.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getMixingFactorByClusterID() called with cluster_id >= number of clusters.";
+    if (cluster_idx >= this->clusters_.size()) {
+      BOOST_LOG_TRIVIAL(error) << "getMixingFactorByClusterID() called with "
+                                  "cluster_id >= number of clusters.";
       return 1.0;
     }
 
@@ -147,13 +148,15 @@ public:
   }
 
   inline double getHeadingAtDist(size_t cluster_idx, size_t mean_idx) {
-    if(cluster_idx >= this->clusters_.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with cluster_idx >= number of clusters.";
+    if (cluster_idx >= this->clusters_.size()) {
+      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with cluster_idx "
+                                  ">= number of clusters.";
       return 0.0;
     }
 
-    if(mean_idx >= this->clusters_[cluster_idx].heading.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with mean_idx >= number of traj-means in cluster.";
+    if (mean_idx >= this->clusters_[cluster_idx].heading.size()) {
+      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with mean_idx >= "
+                                  "number of traj-means in cluster.";
       return 0.0;
     }
 
@@ -185,4 +188,4 @@ protected:
 typedef std::shared_ptr<GMMTMap> GMMTMapPtr;
 typedef std::shared_ptr<const GMMTMap> GMMTMapConstPtr;
 
-}
+} // namespace MoD

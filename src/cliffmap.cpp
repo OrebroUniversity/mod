@@ -28,7 +28,7 @@
 
 #include <boost/log/trivial.hpp>
 
-namespace mod {
+namespace MoD {
 
 IntensityMap::IntensityMap(const IntensityMap &intensityMap) {
   this->rows_ = intensityMap.rows_;
@@ -259,23 +259,23 @@ void CLiFFMap::organizeAsGrid() {
                           << getResolution() << " m/cell.";
 }
 
-} // namespace mod
+} // namespace MoD
 
 std::ostream &operator<<(std::ostream &out,
-                         const mod::CLiFFMapDistribution &dist) {
+                         const MoD::CLiFFMapDistribution &dist) {
   out << "Mixing Factor: " << dist.mixing_factor << "\t";
   out << "Mean: [" << dist.mean[0] << "," << dist.mean[1] << "]" << std::endl;
   return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const mod::CLiFFMapLocation &loc) {
+std::ostream &operator<<(std::ostream &out, const MoD::CLiFFMapLocation &loc) {
   out << "Position: [" << loc.position[0] << ", " << loc.position[1] << "]\n";
   for (const auto &dist : loc.distributions)
     out << "Distribution: " << dist;
   return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const mod::CLiFFMap &map) {
+std::ostream &operator<<(std::ostream &out, const MoD::CLiFFMap &map) {
   out << "XMin: " << map.getXMin() << "\n"
       << "XMax: " << map.getXMax() << "\n"
       << "YMin: " << map.getYMin() << "\n"

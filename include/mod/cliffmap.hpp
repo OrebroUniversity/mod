@@ -31,7 +31,7 @@
 #include <boost/graph/properties.hpp>
 #include <boost/property_map/property_map.hpp>
 
-namespace mod {
+namespace MoD {
 
 class IntensityMap {
   double x_max_;
@@ -206,8 +206,8 @@ public:
 typedef std::shared_ptr<CLiFFMap> CLiFFMapPtr;
 typedef std::shared_ptr<const CLiFFMap> CLiFFMapConstPtr;
 
-} // namespace mod
+} // namespace MoD
 
-std::ostream &operator<<(std::ostream &, const mod::CLiFFMap &);
-std::ostream &operator<<(std::ostream &, const mod::CLiFFMapLocation &);
-std::ostream &operator<<(std::ostream &, const mod::CLiFFMapDistribution &);
+std::ostream &operator<<(std::ostream &, const MoD::CLiFFMap &);
+std::ostream &operator<<(std::ostream &, const MoD::CLiFFMapLocation &);
+std::ostream &operator<<(std::ostream &, const MoD::CLiFFMapDistribution &);

@@ -26,13 +26,13 @@
 #include <functional>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 
 class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
- protected:
-  ::mod::IntensityMap intensity_map_;
+protected:
+  ::MoD::IntensityMap intensity_map_;
 
- public:
+public:
   IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
                                     const std::string &file_name, double wd,
                                     double wq, double wc);
@@ -46,12 +46,13 @@ class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
   ompl::base::Cost motionCost(const ompl::base::State *s1,
                               const ompl::base::State *s2) const override;
 
-  ompl::base::Cost motionCostHeuristic(
-      const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  ompl::base::Cost
+  motionCostHeuristic(const ompl::base::State *s1,
+                      const ompl::base::State *s2) const override;
 };
 
 typedef std::shared_ptr<IntensityMapOptimizationObjective>
     IntensityMapOptimizationObjectivePtr;
 
-}  // namespace mod
-}  // namespace ompl
+} // namespace MoD
+} // namespace ompl

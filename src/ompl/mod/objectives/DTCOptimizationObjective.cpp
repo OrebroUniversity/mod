@@ -20,11 +20,11 @@
 
 #include <memory>
 
-ompl::mod::DTCOptimizationObjective::DTCOptimizationObjective(
-    const ompl::base::SpaceInformationPtr &si, const ::mod::CLiFFMap &cliffmap,
+ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
+    const ompl::base::SpaceInformationPtr &si, const ::MoD::CLiFFMap &cliffmap,
     double wd, double wq, double wc, double maxvs,
     double mahalanobis_distance_threshold, bool use_mixing_factor)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
       max_vehicle_speed(maxvs), cliffmap(cliffmap),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
       use_mixing_factor(use_mixing_factor) {
@@ -33,21 +33,21 @@ ompl::mod::DTCOptimizationObjective::DTCOptimizationObjective(
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::mod::DTCOptimizationObjective::DTCOptimizationObjective(
+ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si,
     const std::string &cliffmap_file_name, double wd, double wq, double wc,
     double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
       max_vehicle_speed(maxvs), cliffmap(cliffmap_file_name),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
       use_mixing_factor(use_mixing_factor) {}
 
-ompl::base::Cost ompl::mod::DTCOptimizationObjective::stateCost(
+ompl::base::Cost ompl::MoD::DTCOptimizationObjective::stateCost(
     const ompl::base::State *s) const {
   return ompl::base::Cost(0.0);
 }
 
-ompl::base::Cost ompl::mod::DTCOptimizationObjective::motionCost(
+ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
     const ompl::base::State *s1, const ompl::base::State *s2) const {
   auto space = si_->getStateSpace();
   // 1. Declare the intermediate states.
@@ -95,7 +95,7 @@ ompl::base::Cost ompl::mod::DTCOptimizationObjective::motionCost(
 
     double x = state_b[0];
     double y = state_b[1];
-    const ::mod::CLiFFMapLocation &cl = cliffmap(x, y);
+    const ::MoD::CLiFFMapLocation &cl = cliffmap(x, y);
     double trust = cl.p * cl.q;
 
     for (const auto &dist : cl.distributions) {
@@ -146,7 +146,7 @@ ompl::base::Cost ompl::mod::DTCOptimizationObjective::motionCost(
   return ompl::base::Cost(total_cost);
 }
 
-ompl::base::Cost ompl::mod::DTCOptimizationObjective::motionCostHeuristic(
+ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCostHeuristic(
     const ompl::base::State *s1, const ompl::base::State *s2) const {
   return motionCost(s1, s2);
 }

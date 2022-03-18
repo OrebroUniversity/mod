@@ -24,32 +24,32 @@
 #include <mod/gmmtmap.hpp>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 
 class UpstreamCriterionOptimizationObjective
-    : public ompl::mod::MoDOptimizationObjective {
+    : public ompl::MoD::MoDOptimizationObjective {
 
-  ::mod::GMMTMapPtr gmmtmap;
+  ::MoD::GMMTMapPtr gmmtmap;
 
-  ::mod::CLiFFMapPtr cliffmap;
+  ::MoD::CLiFFMapPtr cliffmap;
 
 public:
   /** @todo : STeF Support
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
-      const ::mod::STeFMap &stefmap, float wd, float wq, float wc);
+      const ::MoD::STeFMap &stefmap, float wd, float wq, float wc);
   */
   UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si, const ::mod::GMMTMap &gmmtmap,
+      const ompl::base::SpaceInformationPtr &si, const ::MoD::GMMTMap &gmmtmap,
       float wd, float wq, float wc);
 
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
-      const ::mod::CLiFFMap &cliffmap, double wd, double wq, double wc);
+      const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc);
 
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
-      const ompl::mod::MapType &map_type, const std::string &map_file_name,
+      const ompl::MoD::MapType &map_type, const std::string &map_file_name,
       float wd, float wq, float wc);
 
   inline bool isSymmetric() const override { return false; }
@@ -75,5 +75,5 @@ public:
 typedef std::shared_ptr<UpstreamCriterionOptimizationObjective>
     UpstreamCriterionOptimizationObjectivePtr;
 
-} /* namespace mod */
+} // namespace MoD
 } /* namespace ompl */

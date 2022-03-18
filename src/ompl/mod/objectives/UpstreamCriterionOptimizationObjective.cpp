@@ -19,17 +19,17 @@
 #include <boost/geometry.hpp>
 #include <ompl/mod/objectives/UpstreamCriterionOptimizationObjective.h>
 
-ompl::mod::UpstreamCriterionOptimizationObjective::
+ompl::MoD::UpstreamCriterionOptimizationObjective::
     UpstreamCriterionOptimizationObjective(
         const ompl::base::SpaceInformationPtr &si,
-        const ompl::mod::MapType &map_type, const std::string &map_file_name,
+        const ompl::MoD::MapType &map_type, const std::string &map_file_name,
         float wd, float wq, float wc)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, map_type) {
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, map_type) {
   if (map_type == MapType::CLiFFMap) {
-    cliffmap = std::make_shared<::mod::CLiFFMap>(map_file_name);
+    cliffmap = std::make_shared<::MoD::CLiFFMap>(map_file_name);
     description_ = "Upstream Cost over CLiFF-map";
   } else if (map_type == MapType::GMMTMap) {
-    gmmtmap = std::make_shared<::mod::GMMTMap>(map_file_name);
+    gmmtmap = std::make_shared<::MoD::GMMTMap>(map_file_name);
     description_ = "Upstream Cost over GMMT-map";
   } else {
     BOOST_LOG_TRIVIAL(warning)
@@ -40,54 +40,54 @@ ompl::mod::UpstreamCriterionOptimizationObjective::
 }
 
 /** @todo : support STeF-map
-   ompl::mod::UpstreamCriterionOptimizationObjective::
+   ompl::MoD::UpstreamCriterionOptimizationObjective::
     UpstreamCriterionOptimizationObjective(
         const ompl::base::SpaceInformationPtr &si,
-        const ::mod::STeFMap &stefmap, float wd, float wq, float wc)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::STeFMap),
-      stefmap(new ::mod::STeFMap(stefmap)) {
+        const ::MoD::STeFMap &stefmap, float wd, float wq, float wc)
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::STeFMap),
+      stefmap(new ::MoD::STeFMap(stefmap)) {
   description_ = "Upstream Cost over STeF-map";
 
   // Setup a default cost-to-go heuristics:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }*/
 
-ompl::mod::UpstreamCriterionOptimizationObjective::
+ompl::MoD::UpstreamCriterionOptimizationObjective::
     UpstreamCriterionOptimizationObjective(
         const ompl::base::SpaceInformationPtr &si,
-        const ::mod::GMMTMap &gmmtmap, float wd, float wq, float wc)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::GMMTMap),
-      gmmtmap(new ::mod::GMMTMap(gmmtmap)) {
+        const ::MoD::GMMTMap &gmmtmap, float wd, float wq, float wc)
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::GMMTMap),
+      gmmtmap(new ::MoD::GMMTMap(gmmtmap)) {
   description_ = "Upstream Cost over GMMT-map";
 
   // Setup a default cost-to-go heuristics:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::mod::UpstreamCriterionOptimizationObjective::
+ompl::MoD::UpstreamCriterionOptimizationObjective::
     UpstreamCriterionOptimizationObjective(
         const ompl::base::SpaceInformationPtr &si,
-        const ::mod::CLiFFMap &cliffmap, double wd, double wq, double wc)
-    : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
-      cliffmap(new ::mod::CLiFFMap(cliffmap)) {
+        const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc)
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+      cliffmap(new ::MoD::CLiFFMap(cliffmap)) {
   description_ = "Upstream Cost over CLiFF-map";
 
   // Setup a default cost-to-go heuristic:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::base::Cost ompl::mod::UpstreamCriterionOptimizationObjective::stateCost(
+ompl::base::Cost ompl::MoD::UpstreamCriterionOptimizationObjective::stateCost(
     const ompl::base::State *s) const {
   return ompl::base::Cost(0.0);
 }
 
 ompl::base::Cost
-ompl::mod::UpstreamCriterionOptimizationObjective::motionCostHeuristic(
+ompl::MoD::UpstreamCriterionOptimizationObjective::motionCostHeuristic(
     const ompl::base::State *s1, const ompl::base::State *s2) const {
   return motionCost(s1, s2);
 }
 
-ompl::base::Cost ompl::mod::UpstreamCriterionOptimizationObjective::motionCost(
+ompl::base::Cost ompl::MoD::UpstreamCriterionOptimizationObjective::motionCost(
     const ompl::base::State *s1, const ompl::base::State *s2) const {
   auto space = si_->getStateSpace();
   // 1. Declare the intermediate states.
@@ -162,7 +162,7 @@ ompl::base::Cost ompl::mod::UpstreamCriterionOptimizationObjective::motionCost(
 }
 
 /** @todo : support STeF-map
-double ompl::mod::UpstreamCriterionOptimizationObjective::getSTeFMapCost(
+double ompl::MoD::UpstreamCriterionOptimizationObjective::getSTeFMapCost(
     double x, double y, double alpha) const {
   double mod_cost = 0.0;
 
@@ -175,7 +175,7 @@ double ompl::mod::UpstreamCriterionOptimizationObjective::getSTeFMapCost(
 }
 */
 
-double ompl::mod::UpstreamCriterionOptimizationObjective::getGMMTMapCost(
+double ompl::MoD::UpstreamCriterionOptimizationObjective::getGMMTMapCost(
     double x, double y, double alpha) const {
   double mod_cost = 0.0;
   auto dists = (*gmmtmap)(x, y);
@@ -186,7 +186,7 @@ double ompl::mod::UpstreamCriterionOptimizationObjective::getGMMTMapCost(
         gmmtmap->getHeadingAtDist(dist.second[0], dist.second[1]);
 
     double distance_between_gmmtmap_mean_and_current_state_xy =
-        boost::geometry::distance(dist.first, ::mod::Point2D(x, y));
+        boost::geometry::distance(dist.first, ::MoD::Point2D(x, y));
     mod_cost += mixing_factor *
                 (1 - distance_between_gmmtmap_mean_and_current_state_xy /
                          gmmtmap->getStdDev()) *
@@ -196,10 +196,10 @@ double ompl::mod::UpstreamCriterionOptimizationObjective::getGMMTMapCost(
   return mod_cost;
 }
 
-double ompl::mod::UpstreamCriterionOptimizationObjective::getCLiFFMapCost(
+double ompl::MoD::UpstreamCriterionOptimizationObjective::getCLiFFMapCost(
     double x, double y, double alpha) const {
   double mod_cost = 0.0;
-  const ::mod::CLiFFMapLocation &cl = (*cliffmap)(x, y);
+  const ::MoD::CLiFFMapLocation &cl = (*cliffmap)(x, y);
 
   for (const auto &dist : cl.distributions) {
     mod_cost +=

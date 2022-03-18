@@ -18,8 +18,7 @@ set(mod_PATCH_VERSION @PROJECT_VERSION_PATCH@)
 
 set_and_check(mod_INCLUDE_DIRS @PACKAGE_INCLUDE_INSTALL_DIR@)
 set_and_check(mod_LIBRARY_DIR @PACKAGE_LIB_INSTALL_DIR@)
-find_library(mod_LIBRARIES NAMES mod.${MOD_VERSION} mod
-    PATHS ${MOD_LIBRARY_DIR} NO_DEFAULT_PATH)
+find_library(mod_LIBRARIES NAMES mod.${MOD_VERSION} mod PATHS ${mod_LIBRARY_DIR} NO_DEFAULT_PATH)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(mod DEFAULT_MSG mod_INCLUDE_DIRS mod_LIBRARIES)

@@ -22,7 +22,7 @@
 #include <ompl/base/OptimizationObjective.h>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 
 enum class MapType {
   CLiFFMap = 0,
@@ -103,5 +103,5 @@ public:
 
 typedef std::shared_ptr<MoDOptimizationObjective> MoDOptimizationObjectivePtr;
 
-} // namespace mod
+} // namespace MoD
 } // namespace ompl

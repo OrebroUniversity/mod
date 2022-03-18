@@ -20,11 +20,11 @@
 
 #include <Eigen/Dense>
 #include <array>
-#include <mod/cliffmap.hpp>
 #include <functional>
+#include <mod/cliffmap.hpp>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 /**
  * The optimization objective class for DownTheCLiFF cost.
  * This is a multi-optimization objective but doens't derive from the
@@ -41,15 +41,15 @@ class DTCOptimizationObjective : public MoDOptimizationObjective {
   bool use_mixing_factor;
 
   /// A std smart pointer to the CLiFFMap.
-  ::mod::CLiFFMap cliffmap;
+  ::MoD::CLiFFMap cliffmap;
 
- public:
+public:
   /**
    * Constructor
    * @param si SpaceInformationPtr that we get from the problem setup.
    */
   DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                           const ::mod::CLiFFMap &cliffmap, double wd,
+                           const ::MoD::CLiFFMap &cliffmap, double wd,
                            double wq, double wc, double maxvs,
                            double mahalanobis_distance_threshold = 10.0,
                            bool use_mixing_factor = true);
@@ -69,16 +69,17 @@ class DTCOptimizationObjective : public MoDOptimizationObjective {
   ompl::base::Cost motionCost(const ompl::base::State *s1,
                               const ompl::base::State *s2) const override;
 
-  inline void setMahalanobisDistanceThreshold(
-      double mahalanobis_distance_threshold) {
+  inline void
+  setMahalanobisDistanceThreshold(double mahalanobis_distance_threshold) {
     this->mahalanobis_distance_threshold = mahalanobis_distance_threshold;
   }
 
-  ompl::base::Cost motionCostHeuristic(
-      const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  ompl::base::Cost
+  motionCostHeuristic(const ompl::base::State *s1,
+                      const ompl::base::State *s2) const override;
 };
 
 typedef std::shared_ptr<DTCOptimizationObjective> DTCOptimizationObjectivePtr;
 
-}  // namespace mod
-}  // namespace ompl
+} // namespace MoD
+} // namespace ompl
