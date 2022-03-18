@@ -18,13 +18,12 @@
 
 #include "ompl/mod/objectives/DTCOptimizationObjective.h"
 
-#incldue <boost/log/trivial.hpp>
 #include <memory>
 
 ompl::mod::DTCOptimizationObjective::DTCOptimizationObjective(
-    const ompl::base::SpaceInformationPtr &si,
-    const ::mod::CLiFFMap &cliffmap, double wd, double wq, double wc,
-    double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
+    const ompl::base::SpaceInformationPtr &si, const ::mod::CLiFFMap &cliffmap,
+    double wd, double wq, double wc, double maxvs,
+    double mahalanobis_distance_threshold, bool use_mixing_factor)
     : ompl::mod::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
       max_vehicle_speed(maxvs), cliffmap(cliffmap),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),

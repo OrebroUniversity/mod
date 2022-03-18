@@ -27,10 +27,10 @@ add_library(mod SHARED
         src/gmmtmap.cpp
         )
 target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
-add_library(ompl_mod_objectives
-        src/IntensityMapOptimizationObjective.cpp
-        src/UpstreamCriterionOptimizationObjective.cpp
-        src/DTCOptimizationObjective.cpp)
+add_library(ompl_mod_objectives SHARED
+        src/ompl/mod/objectives/IntensityMapOptimizationObjective.cpp
+        src/ompl/mod/objectives/UpstreamCriterionOptimizationObjective.cpp
+        src/ompl/mod/objectives/DTCOptimizationObjective.cpp)
 
 #############
 ## Install ##
