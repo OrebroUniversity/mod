@@ -1,0 +1,25 @@
+# CMake MOD module
+#
+# It defines the following variables:
+# MOD_FOUND         - TRUE
+# MOD_INCLUDE_DIRS  - The MOD include directory
+# MOD_LIBRARIES     - The MOD library
+# MOD_VERSION       - The MOD version in the form <major>.<minor>.<patchlevel>
+# MOD_MAJOR_VERSION - Major version
+# MOD_MINOR_VERSION - Minor version
+# MOD_PATCH_VERSION - Patch version
+
+@PACKAGE_INIT@
+
+set(MOD_VERSION @PROJECT_VERSION@)
+set(MOD_MAJOR_VERSION @PROJECT_VERSION_MAJOR@)
+set(MOD_MINOR_VERSION @PROJECT_VERSION_MINOR@)
+set(MOD_PATCH_VERSION @PROJECT_VERSION_PATCH@)
+
+set_and_check(MOD_INCLUDE_DIRS @PACKAGE_INCLUDE_INSTALL_DIR@)
+set_and_check(MOD_LIBRARY_DIR @PACKAGE_LIB_INSTALL_DIR@)
+find_library(MOD_LIBRARIES NAMES MOD.${MOD_VERSION} MOD
+    PATHS ${MOD_LIBRARY_DIR} NO_DEFAULT_PATH)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MOD DEFAULT_MSG MOD_INCLUDE_DIRS MOD_LIBRARIES)
