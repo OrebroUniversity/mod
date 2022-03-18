@@ -5,14 +5,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Release)
 
-find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  roscpp
-  std_msgs
-  tf
-  message_generation
-)
-
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(ompl 1.5 REQUIRED)
@@ -23,14 +15,14 @@ find_package(ompl 1.5 REQUIRED)
 
 include_directories(
   include
-  ${EIGEN3_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
-add_library(mod
+add_library(mod SHARED
   src/cliffmap.cpp
   src/gmmtmap.cpp
 )
