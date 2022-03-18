@@ -61,7 +61,7 @@ write_basic_package_version_file(
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY SameMajorVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/modConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/srnpConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/modConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mod/cmake
         COMPONENT mod)
 
