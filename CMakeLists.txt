@@ -14,60 +14,63 @@ find_package(ompl 1.5 REQUIRED)
 ###########
 
 include_directories(
-  include
-  ${EIGEN3_INCLUDE_DIR}
-  ${Boost_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
-  ${OMPL_INCLUDE_DIR}
+        include
+        ${EIGEN3_INCLUDE_DIR}
+        ${Boost_INCLUDE_DIRS}
+        ${catkin_INCLUDE_DIRS}
+        ${OMPL_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
 add_library(mod SHARED
-  src/cliffmap.cpp
-  src/gmmtmap.cpp
-)
-
+        src/cliffmap.cpp
+        src/gmmtmap.cpp
+        )
 target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
+add_library(ompl_mod_objectives
+        src/IntensityMapOptimizationObjective.cpp
+        src/UpstreamCriterionOptimizationObjective.cpp
+        src/DTCOptimizationObjective.cpp)
 
 #############
 ## Install ##
 #############
 include(GNUInstallDirs)
 
-install(TARGETS mod
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+install(TARGETS mod ompl_mod_objectives
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
 
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE
-)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        PATTERN ".svn" EXCLUDE
+        )
 
 include(CMakePackageConfigHelpers)
 set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/modConfig.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mod/cmake
-  PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR
-  NO_CHECK_REQUIRED_COMPONENTS_MACRO)
+        ${CMAKE_CURRENT_BINARY_DIR}/modConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mod/cmake
+        PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/modConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion)
+        ${CMAKE_CURRENT_BINARY_DIR}/modConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/modConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/srnpConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mod/cmake
-  COMPONENT mod)
+        ${CMAKE_CURRENT_BINARY_DIR}/srnpConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mod/cmake
+        COMPONENT mod)
 
 ########### Add uninstall target ###############
 CONFIGURE_FILE(
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
-  IMMEDIATE @ONLY)
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
+        "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/CPackSettings.cmake)
