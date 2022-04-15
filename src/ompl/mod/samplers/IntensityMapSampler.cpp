@@ -5,10 +5,10 @@
 #include <ompl/mod/samplers/IntensityMapSampler.h>
 
 namespace ompl {
-namespace mod {
+namespace MoD {
 
 IntensityMapSampler::IntensityMapSampler(const ob::SpaceInformation *si,
-                                         const MoD::IntensityMap &qmap)
+                                         const ::MoD::IntensityMap &qmap)
     : ob::ValidStateSampler(si) {
   setup(qmap);
 }
@@ -82,5 +82,5 @@ bool IntensityMapSampler::sample(ob::State *state) {
   return true;
 }
 
-} // namespace mod
+} // namespace MoD
 } // namespace ompl
