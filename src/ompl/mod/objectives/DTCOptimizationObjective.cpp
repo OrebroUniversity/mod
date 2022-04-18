@@ -21,6 +21,22 @@
 #include <memory>
 
 ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
+    const ompl::base::SpaceInformationPtr &si,
+    const std::string &cliffmap_file_name,
+    const std::string &intensity_map_file_name, double wd, double wq, double wc,
+    double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+      max_vehicle_speed(maxvs), cliffmap(cliffmap),
+      intensitymap(intensity_map_file_name),
+      mahalanobis_distance_threshold(mahalanobis_distance_threshold),
+      use_mixing_factor(use_mixing_factor) {
+  description_ = "DownTheCLiFF-q Cost";
+  this->use_intensity = true;
+  // Setup a default cost-to-go heuristic:
+  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
+}
+
+ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si, const ::MoD::CLiFFMap &cliffmap,
     double wd, double wq, double wc, double maxvs,
     double mahalanobis_distance_threshold, bool use_mixing_factor)
@@ -40,7 +56,11 @@ ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
       max_vehicle_speed(maxvs), cliffmap(cliffmap_file_name),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
-      use_mixing_factor(use_mixing_factor) {}
+      use_mixing_factor(use_mixing_factor) {
+  description_ = "DownTheCLiFF Cost";
+  // Setup a default cost-to-go heuristic:
+  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
+}
 
 ompl::base::Cost ompl::MoD::DTCOptimizationObjective::stateCost(
     const ompl::base::State *s) const {
@@ -96,8 +116,8 @@ ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
     double x = state_b[0];
     double y = state_b[1];
     const ::MoD::CLiFFMapLocation &cl = cliffmap(x, y);
-    double trust = cl.p * cl.q;
 
+    double q_value = intensitymap(x, y);
     for (const auto &dist : cl.distributions) {
       Eigen::Matrix2d Sigma;
       std::array<double, 4> sigma_array = dist.getCovariance();
@@ -111,14 +131,14 @@ ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
 
       double inc_cost = 0.0;
       if (Sigma.determinant() < 1e-8 && Sigma.determinant() > -1e-8)
-        inc_cost = mahalanobis_distance_threshold * trust;
+        inc_cost = mahalanobis_distance_threshold;
       else {
         double mahalanobis =
             sqrt((V - myu).transpose() * Sigma.inverse() * (V - myu));
         if (mahalanobis > mahalanobis_distance_threshold)
           mahalanobis = mahalanobis_distance_threshold;
 
-        inc_cost = mahalanobis * trust;
+        inc_cost = mahalanobis;
       }
 
       if (inc_cost < 0.0) {
@@ -126,7 +146,7 @@ ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
       }
 
       if (std::isnan(inc_cost)) {
-        inc_cost = mahalanobis_distance_threshold * trust;
+        inc_cost = mahalanobis_distance_threshold;
       }
 
       if (use_mixing_factor)
@@ -134,6 +154,9 @@ ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
 
       cost_c += inc_cost;
     }
+
+    if (use_intensity)
+      cost_c = cost_c * q_value;
 
     total_cost +=
         (weight_d_ * cost_d) + (weight_q_ * cost_q) + (weight_c_ * cost_c);

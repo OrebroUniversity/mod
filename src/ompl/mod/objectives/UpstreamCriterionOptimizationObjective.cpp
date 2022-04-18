@@ -71,7 +71,21 @@ ompl::MoD::UpstreamCriterionOptimizationObjective::
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
       cliffmap(new ::MoD::CLiFFMap(cliffmap)) {
   description_ = "Upstream Cost over CLiFF-map";
+  // Setup a default cost-to-go heuristic:
+  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
+}
 
+ompl::MoD::UpstreamCriterionOptimizationObjective::
+    UpstreamCriterionOptimizationObjective(
+        const ompl::base::SpaceInformationPtr &si,
+        const ::MoD::CLiFFMap &cliffmap,
+        const std::string &intensity_map_file_name, double wd, double wq,
+        double wc)
+    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+      cliffmap(new ::MoD::CLiFFMap(cliffmap)),
+      intensitymap(intensity_map_file_name) {
+  description_ = "Upstream+q Cost over CLiFF-map";
+  use_intensity = true;
   // Setup a default cost-to-go heuristic:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
@@ -201,9 +215,12 @@ double ompl::MoD::UpstreamCriterionOptimizationObjective::getCLiFFMapCost(
   double mod_cost = 0.0;
   const ::MoD::CLiFFMapLocation &cl = (*cliffmap)(x, y);
 
+  double q_value = intensitymap(x, y);
   for (const auto &dist : cl.distributions) {
     mod_cost +=
         dist.getMixingFactor() * (1 - cos(dist.getMeanHeading() - alpha));
   }
+  if (use_intensity)
+    mod_cost = mod_cost * q_value;
   return mod_cost;
 }

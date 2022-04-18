@@ -21,6 +21,8 @@ IntensityMapSampler::IntensityMapSampler(
 
 void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
 
+  this->name_ = "Intensity Map Sampler";
+
   BOOST_LOG_TRIVIAL(info) << "Intensity Map has "
                           << intensity_map.getRows() *
                                  intensity_map.getColumns()
@@ -28,7 +30,7 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
   for (size_t i = 0; i < intensity_map.getRows() * intensity_map.getColumns();
        i++) {
     auto xy = intensity_map.getXYatIndex(i);
-    q_map.emplace_back(xy[0], xy[1], intensity_map(xy[0], xy[1]));
+    q_map.emplace_back(xy[0], xy[1], 1.0 - intensity_map(xy[0], xy[1]));
   }
 
   // Sort it by value. Not necessary really.

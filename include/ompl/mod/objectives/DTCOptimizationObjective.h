@@ -43,6 +43,10 @@ class DTCOptimizationObjective : public MoDOptimizationObjective {
   /// A std smart pointer to the CLiFFMap.
   ::MoD::CLiFFMap cliffmap;
 
+  ::MoD::IntensityMap intensitymap;
+
+  bool use_intensity{false};
+
 public:
   /**
    * Constructor
@@ -57,6 +61,13 @@ public:
   DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
                            const std::string &cliffmap_file_name, double wd,
                            double wq, double wc, double maxvs,
+                           double mahalanobis_distance_threshold = 10.0,
+                           bool use_mixing_factor = true);
+
+  DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
+                           const std::string &cliffmap_file_name,
+                           const std::string &intensity_map_file_name,
+                           double wd, double wq, double wc, double maxvs,
                            double mahalanobis_distance_threshold = 10.0,
                            bool use_mixing_factor = true);
 

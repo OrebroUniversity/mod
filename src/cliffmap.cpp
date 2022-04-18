@@ -94,9 +94,6 @@ void CLiFFMap::readFromXML(const std::string &fileName) {
         try {
           location.p = vLocation.second.get<double>("p");
         } catch (std::exception &ex) {
-          BOOST_LOG_TRIVIAL(warning)
-              << "There was an exception trying to get 'p' value from xml: "
-              << ex.what();
           location.p = 1.0;
         }
 
@@ -104,9 +101,6 @@ void CLiFFMap::readFromXML(const std::string &fileName) {
         try {
           location.q = vLocation.second.get<double>("q");
         } catch (std::exception &ex) {
-          BOOST_LOG_TRIVIAL(warning)
-              << "There was an exception trying to get 'q' value from xml: "
-              << ex.what();
           location.q = 1.0;
         }
 

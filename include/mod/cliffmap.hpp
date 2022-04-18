@@ -151,7 +151,7 @@ public:
   double columns_;
   bool organized_{false};
 
-  std::string frame_id_{std::string("")};
+  std::string frame_id_{std::string("default")};
 
   inline void setFrameID(const std::string &frame_id) { frame_id_ = frame_id; }
 

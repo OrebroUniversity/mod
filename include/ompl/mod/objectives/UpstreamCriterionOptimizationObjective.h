@@ -33,6 +33,10 @@ class UpstreamCriterionOptimizationObjective
 
   ::MoD::CLiFFMapPtr cliffmap;
 
+  ::MoD::IntensityMap intensitymap;
+
+  bool use_intensity{false};
+
 public:
   /** @todo : STeF Support
   UpstreamCriterionOptimizationObjective(
@@ -46,6 +50,12 @@ public:
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
       const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc);
+
+  UpstreamCriterionOptimizationObjective(
+      const ompl::base::SpaceInformationPtr &si,
+      const ::MoD::CLiFFMap &cliffmap,
+      const std::string &intensity_map_file_name, double wd, double wq,
+      double wc);
 
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
