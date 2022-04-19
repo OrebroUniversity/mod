@@ -26,7 +26,7 @@ ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const std::string &intensity_map_file_name, double wd, double wq, double wc,
     double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
-      max_vehicle_speed(maxvs), cliffmap(cliffmap),
+      max_vehicle_speed(maxvs), cliffmap(cliffmap_file_name),
       intensitymap(intensity_map_file_name),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
       use_mixing_factor(use_mixing_factor) {
