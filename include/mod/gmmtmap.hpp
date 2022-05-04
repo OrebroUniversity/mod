@@ -148,15 +148,21 @@ public:
   }
 
   inline double getHeadingAtDist(size_t cluster_idx, size_t mean_idx) {
+
     if (cluster_idx >= this->clusters_.size()) {
       BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with cluster_idx "
                                   ">= number of clusters.";
+      BOOST_LOG_TRIVIAL(error) << "Total clusters: " << this->clusters_.size()
+                               << ", Cluster ID: " << cluster_idx;
       return 0.0;
     }
 
     if (mean_idx >= this->clusters_[cluster_idx].heading.size()) {
       BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with mean_idx >= "
                                   "number of traj-means in cluster.";
+      BOOST_LOG_TRIVIAL(error)
+          << "Total means: " << this->clusters_[cluster_idx].heading.size()
+          << ", Cluster ID and Mean ID: " << cluster_idx << ", " << mean_idx;
       return 0.0;
     }
 

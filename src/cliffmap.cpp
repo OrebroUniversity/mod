@@ -130,10 +130,10 @@ void CLiFFMap::readFromXML(const std::string &fileName) {
     }
     this->locations_.push_back(location);
   }
-  std::cout << "Read a cliffmap from XML" << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "Read a cliffmap from XML" << std::endl;
 
   // Frame ID:
-  std::cout << "Frame ID for cliffmap is: " << frame_id_;
+  BOOST_LOG_TRIVIAL(info) << "Frame ID for cliffmap is: " << frame_id_;
 }
 
 CLiFFMapLocation CLiFFMap::at(size_t row, size_t col) const {

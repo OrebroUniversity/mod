@@ -56,7 +56,7 @@ std::vector<TreeValue> GMMTMap::getNearestNeighbors(double x, double y) const {
 
 void GMMTMap::computeHeadingAndConstructRTree() {
   for (size_t index = 0; index < this->clusters_.size(); index++) {
-    auto cluster = this->clusters_[index];
+    auto &cluster = this->clusters_[index];
 
     for (size_t i = 0; i < cluster.mean.size(); i++) {
 
@@ -102,8 +102,8 @@ void GMMTMap::readFromXML(const std::string &fileName) {
   }
 
   this->computeHeadingAndConstructRTree();
-  BOOST_LOG_TRIVIAL(info)
-      << "Read a GMMT-map with %d clusters each containing %d gaussians",
-      this->M_, this->K_;
+  BOOST_LOG_TRIVIAL(info) << "Read a GMMT-map with " << this->M_
+                          << " clusters each containing " << this->K_
+                          << " gaussians";
 }
 } // namespace MoD
