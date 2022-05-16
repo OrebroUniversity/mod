@@ -1,21 +1,24 @@
 #include <boost/log/trivial.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <ompl/base/spaces/SE2StateSpace.h>
 
+#include <ompl/base/spaces/SE2StateSpace.h>
+#include <ompl/base/SpaceInformation.h>
 #include <ompl/mod/samplers/IntensityMapSampler.h>
 
 namespace ompl {
 namespace MoD {
 
-IntensityMapSampler::IntensityMapSampler(const ob::SpaceInformation *si,
+IntensityMapSampler::IntensityMapSampler(const ompl::base::SpaceInformation *si,
                                          const ::MoD::IntensityMap &qmap)
-    : ob::ValidStateSampler(si) {
+    : ompl::base::ValidStateSampler(si) {
+  this->attempts_ = 100;
   setup(qmap);
 }
 
 IntensityMapSampler::IntensityMapSampler(
-    const ob::SpaceInformation *si, const std::string &intensity_map_file_name)
-    : ob::ValidStateSampler(si) {
+    const ompl::base::SpaceInformation *si, const std::string &intensity_map_file_name)
+    : ompl::base::ValidStateSampler(si) {
+  this->attempts_ = 100;
   setup(::MoD::IntensityMap(intensity_map_file_name));
 }
 
@@ -23,19 +26,15 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
 
   this->name_ = "Intensity Map Sampler";
 
-  BOOST_LOG_TRIVIAL(info) << "Intensity Map has "
-                          << intensity_map.getRows() *
-                                 intensity_map.getColumns()
+  BOOST_LOG_TRIVIAL(info) << "Intensity Map has " << intensity_map.getRows() * intensity_map.getColumns()
                           << " locations.";
-  for (size_t i = 0; i < intensity_map.getRows() * intensity_map.getColumns();
-       i++) {
+  for (size_t i = 0; i < intensity_map.getRows() * intensity_map.getColumns(); i++) {
     auto xy = intensity_map.getXYatIndex(i);
     q_map.emplace_back(xy[0], xy[1], 1.0 - intensity_map(xy[0], xy[1]));
   }
 
   // Sort it by value. Not necessary really.
-  std::sort(q_map.begin(), q_map.end(),
-            [](QMap a, QMap b) { return a.getValue() < b.getValue(); });
+  std::sort(q_map.begin(), q_map.end(), [](QMap a, QMap b) { return a.getValue() < b.getValue(); });
 
   // Compute weighted sum.
   this->value_sum =
@@ -46,7 +45,21 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
           .getValue();
 }
 
-bool IntensityMapSampler::sample(ob::State *state) {
+bool IntensityMapSampler::sample(ompl::base::State *state) {
+  unsigned int attempts = 0;
+  bool valid = false;
+  double dist = 0.0;
+
+  do {
+    sampleNotNecessarilyValid(state);
+    valid = si_->getStateValidityChecker()->isValid(state, dist);
+    ++attempts;
+  } while (attempts < attempts_ && !valid);
+
+  return valid;
+}
+
+void IntensityMapSampler::sampleNotNecessarilyValid(ompl::base::State *state) {
 
   // Sample theta first. This is the easiest part.
   double theta = rng_.uniformReal(-boost::math::constants::pi<double>(),
@@ -80,8 +93,6 @@ bool IntensityMapSampler::sample(ob::State *state) {
   (state->as<ompl::base::SE2StateSpace::StateType>())->setX(sampled_x);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setY(sampled_y);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setYaw(theta);
-
-  return true;
 }
 
 } // namespace MoD

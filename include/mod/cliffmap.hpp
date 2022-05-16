@@ -31,9 +31,11 @@
 #include <boost/graph/properties.hpp>
 #include <boost/property_map/property_map.hpp>
 
+#include <mod/base.hpp>
+
 namespace MoD {
 
-class IntensityMap {
+class IntensityMap : public Base {
   double x_max_;
   double y_max_;
   double x_min_;
@@ -134,7 +136,7 @@ struct CLiFFMapLocation {
   std::vector<CLiFFMapDistribution> distributions;
 };
 
-class CLiFFMap {
+class CLiFFMap : public Base {
 public:
   double x_min_;
   double x_max_;
@@ -150,12 +152,6 @@ public:
   // (columns_ - 1) * resolution_ = x_max_ - x_min_
   double columns_;
   bool organized_{false};
-
-  std::string frame_id_{std::string("default")};
-
-  inline void setFrameID(const std::string &frame_id) { frame_id_ = frame_id; }
-
-  inline std::string getFrameID() const { return frame_id_; }
 
   std::vector<CLiFFMapLocation> locations_;
 

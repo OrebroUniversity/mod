@@ -8,16 +8,14 @@
 namespace ompl {
 namespace MoD {
 
-namespace ob = ompl::base;
+class IntensityMapSampler : public ompl::base::ValidStateSampler {
 
-class IntensityMapSampler : public ob::ValidStateSampler {
-
-protected:
+ protected:
   class QMap {
     std::array<double, 2> position;
     double value;
 
-  public:
+   public:
     QMap(double x, double y, double value) {
       this->position[0] = x;
       this->position[1] = y;
@@ -37,24 +35,26 @@ protected:
 
   ompl::RNG rng_;
 
-public:
-  IntensityMapSampler(const ob::SpaceInformation *si,
+ public:
+  IntensityMapSampler(const ompl::base::SpaceInformation *si,
                       const ::MoD::IntensityMap &q_map);
 
-  IntensityMapSampler(const ob::SpaceInformation *si,
+  IntensityMapSampler(const ompl::base::SpaceInformation *si,
                       const std::string &intensity_map_file_name);
 
   void setup(const ::MoD::IntensityMap &intensity_map);
 
-  bool sample(ob::State *state) override;
+  bool sample(ompl::base::State *state) override;
 
-  inline bool sampleNear(ob::State *state, const ob::State *near,
+  void sampleNotNecessarilyValid(ompl::base::State *state);
+
+  inline bool sampleNear(ompl::base::State *state, const ompl::base::State *near,
                          double distance) override {
     return false;
   }
 
-  static ob::ValidStateSamplerPtr
-  allocate(const ob::SpaceInformation *si,
+  static ompl::base::ValidStateSamplerPtr
+  allocate(const ompl::base::SpaceInformation *si,
            const std::string &intensity_map_file_name) {
     return std::make_shared<IntensityMapSampler>(si, intensity_map_file_name);
   }

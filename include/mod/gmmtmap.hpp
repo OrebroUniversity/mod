@@ -29,6 +29,8 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
+#include <mod/base.hpp>
+
 namespace MoD {
 
 namespace bg = boost::geometry;
@@ -66,7 +68,7 @@ struct GMMTMapCluster {
   }
 };
 
-class GMMTMap {
+class GMMTMap : public Base {
 public:
   /**
    * \brief Constructor that reads a GMMTMap from an xml file.
@@ -118,19 +120,6 @@ public:
    * \return The standard deviation.
    */
   inline double getStdDev() const { return stddev_; }
-
-  /**
-   * \brief Get the Frame ID used in ROS messages.
-   * \return ROS message header.frame_id.
-   */
-  inline std::string getFrameID() const { return frame_id_; }
-
-  /**
-   * \brief Set the frame ID in ROS message.
-   */
-  inline void setFrameID(const std::string &frame_id) {
-    this->frame_id_ = frame_id;
-  }
 
   /**
    * \brief Get the mixing factor for a certain cluster index.
@@ -185,10 +174,6 @@ protected:
 
   /// A tree used for
   bgi::rtree<TreeValue, bgi::quadratic<16>> rtree_;
-
-  /// Frame ID in the ROS message. Might be used for transformation. Right now,
-  /// it is only used to fill in the ROS message's header.frame_id.
-  std::string frame_id_;
 };
 
 typedef std::shared_ptr<GMMTMap> GMMTMapPtr;

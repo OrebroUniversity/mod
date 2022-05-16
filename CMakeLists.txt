@@ -29,7 +29,8 @@ add_library(mod SHARED
         src/ompl/mod/objectives/IntensityMapOptimizationObjective.cpp
         src/ompl/mod/objectives/UpstreamCriterionOptimizationObjective.cpp
         src/ompl/mod/objectives/DTCOptimizationObjective.cpp
-        src/ompl/mod/samplers/IntensityMapSampler.cpp)
+        src/ompl/mod/samplers/IntensityMapSampler.cpp
+        src/ompl/mod/samplers/DijkstraSampler.cpp)
 target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
 
 #############
