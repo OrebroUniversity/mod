@@ -36,18 +36,18 @@
 namespace MoD {
 
 class IntensityMap : public Base {
-  double x_max_;
-  double y_max_;
-  double x_min_;
-  double y_min_;
-  size_t rows_;
-  size_t columns_;
-  double cell_size_;
+  double x_max_{0.0};
+  double y_max_{0.0};
+  double x_min_{0.0};
+  double y_min_{0.0};
+  size_t rows_{0};
+  size_t columns_{0};
+  double cell_size_{0.0};
   std::vector<double> values_;
 
   void readFromXML(const std::string &fileName);
 
-public:
+ public:
   inline IntensityMap() = default;
   inline explicit IntensityMap(const std::string &fileName) {
     this->readFromXML(fileName);
@@ -65,17 +65,17 @@ public:
   virtual ~IntensityMap() = default;
 
   inline double operator()(double x, double y) const {
-    size_t row = size_t(std::floor(y - this->y_min_) / this->cell_size_);
-    size_t col = size_t(std::floor(x - this->x_min_) / this->cell_size_);
+    auto row = size_t(std::floor(y - this->y_min_) / this->cell_size_);
+    auto col = size_t(std::floor(x - this->x_min_) / this->cell_size_);
     return this->values_[row * this->columns_ + col];
   }
 
   inline std::array<double, 2> getXYatIndex(size_t index) const {
-    size_t row = index % this->columns_;
-    size_t col = index - (row * this->columns_);
+    size_t col = index % this->columns_;
+    size_t row = static_cast<size_t>(index / this->columns_);
 
-    return {(((double)col * this->cell_size_) + this->x_min_),
-            (((double)row * this->cell_size_) + this->y_min_)};
+    return {(((double) col * this->cell_size_) + this->x_min_),
+            (((double) row * this->cell_size_) + this->y_min_)};
   }
 };
 
@@ -137,29 +137,29 @@ struct CLiFFMapLocation {
 };
 
 class CLiFFMap : public Base {
-public:
-  double x_min_;
-  double x_max_;
-  double y_min_;
-  double y_max_;
-  double radius_;
+ public:
+  double x_min_{0.0};
+  double x_max_{0.0};
+  double y_min_{0.0};
+  double y_max_{0.0};
+  double radius_{0.0};
 
   // Used only if we want to interpret this cliffmap as a grid.
-  double resolution_;
+  double resolution_{0.0};
 
   // (rows_ - 1) * resolution_ = y_max_ - y_min_
-  double rows_;
+  double rows_{0.0};
   // (columns_ - 1) * resolution_ = x_max_ - x_min_
-  double columns_;
+  double columns_{0.0};
   bool organized_{false};
 
   std::vector<CLiFFMapLocation> locations_;
 
   inline double index2x(size_t col) const {
-    return (((double)col * resolution_) + x_min_);
+    return (((double) col * resolution_) + x_min_);
   }
   inline double index2y(size_t row) const {
-    return (((double)row * resolution_) + y_min_);
+    return (((double) row * resolution_) + y_min_);
   }
   inline size_t x2index(double x) const {
     return std::round((x - x_min_) / resolution_);
@@ -170,7 +170,7 @@ public:
 
   CLiFFMap() = default;
 
-  inline CLiFFMap(const std::string &fileName, bool organize = false) {
+  inline explicit CLiFFMap(const std::string &fileName, bool organize = false) {
     readFromXML(fileName);
     if (organize)
       organizeAsGrid();
