@@ -9,17 +9,37 @@ namespace ompl {
 namespace MoD {
 
 IntensityMapSampler::IntensityMapSampler(const ompl::base::SpaceInformation *si,
-                                         const ::MoD::IntensityMap &qmap)
-    : ompl::base::ValidStateSampler(si) {
+                                         const ::MoD::IntensityMap &qmap,
+                                         double bias)
+    : ompl::base::ValidStateSampler(si), bias_(bias) {
   this->attempts_ = 100;
   setup(qmap);
 }
 
 IntensityMapSampler::IntensityMapSampler(
-    const ompl::base::SpaceInformation *si, const std::string &intensity_map_file_name)
-    : ompl::base::ValidStateSampler(si) {
+    const ompl::base::SpaceInformation *si, const std::string &intensity_map_file_name, double bias)
+    : ompl::base::ValidStateSampler(si), bias_(bias) {
   this->attempts_ = 100;
   setup(::MoD::IntensityMap(intensity_map_file_name));
+}
+
+bool IntensityMapSampler::checkValidity(double xi, double yi) {
+  ompl::base::State *first = si_->allocState();
+
+  (first->as<ompl::base::SE2StateSpace::StateType>())->setX(xi);
+  (first->as<ompl::base::SE2StateSpace::StateType>())->setY(yi);
+  (first->as<ompl::base::SE2StateSpace::StateType>())->setYaw(0.0);
+
+  auto checker = si_->getStateValidityChecker();
+  bool valid = true;
+  if (checker != nullptr) {
+    valid = checker->isValid(first);
+  } else {
+    std::cout << "SHITE";
+  }
+  si_->freeState(first);
+
+  return valid;
 }
 
 void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
@@ -29,8 +49,12 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
   BOOST_LOG_TRIVIAL(info) << "Intensity Map has " << intensity_map.getRows() * intensity_map.getColumns()
                           << " locations.";
   for (size_t i = 0; i < intensity_map.getRows() * intensity_map.getColumns(); i++) {
+
     auto xy = intensity_map.getXYatIndex(i);
-    q_map.emplace_back(xy[0], xy[1], 1.0 - intensity_map(xy[0], xy[1]));
+    if (this->checkValidity(xy[0], xy[1])) {
+      q_map.emplace_back(xy[0], xy[1], 1.0 - intensity_map(xy[0], xy[1]));
+      nonq_map.emplace_back(xy[0], xy[1], 1.0);
+    }
   }
 
   // Sort it by value. Not necessary really.
@@ -47,19 +71,12 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
 
 bool IntensityMapSampler::sample(ompl::base::State *state) {
   unsigned int attempts = 0;
-  bool valid = false;
   double dist = 0.0;
-
-  do {
-    sampleNotNecessarilyValid(state);
-    valid = si_->getStateValidityChecker()->isValid(state, dist);
-    ++attempts;
-  } while (attempts < attempts_ && !valid);
-
-  return valid;
+  sampleNecessarilyValid(state);
+  return true;
 }
 
-void IntensityMapSampler::sampleNotNecessarilyValid(ompl::base::State *state) {
+void IntensityMapSampler::sampleNecessarilyValid(ompl::base::State *state) {
 
   // Sample theta first. This is the easiest part.
   double theta = rng_.uniformReal(-boost::math::constants::pi<double>(),
@@ -73,22 +90,38 @@ void IntensityMapSampler::sampleNotNecessarilyValid(ompl::base::State *state) {
   size_t index = 0;
   size_t result_index = 0;
 
-  while (index < q_map.size()) {
-    if (sampled_value < accum_sum) {
-      // This is the right index!
-      result_index = index;
-      break;
-    }
-    accum_sum = accum_sum + q_map[index].getValue();
-    index = index + 1;
-  }
+  double sampled_x, sampled_y;
 
-  double sampled_x =
-      rng_.uniformReal(q_map[result_index].getX() - half_cell_size,
-                       q_map[result_index].getX() + half_cell_size);
-  double sampled_y =
-      rng_.uniformReal(q_map[result_index].getY() - half_cell_size,
-                       q_map[result_index].getY() + half_cell_size);
+  auto random_num = rng_.uniformReal(0.0, 1.0);
+  if (random_num < bias_) {
+    while (index < q_map.size()) {
+      if (sampled_value < accum_sum) {
+        // This is the right index!
+        result_index = index;
+        break;
+      }
+      accum_sum = accum_sum + q_map[index].getValue();
+      index = index + 1;
+    }
+    rng_.uniformReal(q_map[result_index].getX() - half_cell_size,
+                     q_map[result_index].getX() + half_cell_size);
+    rng_.uniformReal(q_map[result_index].getX() - half_cell_size,
+                     q_map[result_index].getX() + half_cell_size);
+  } else {
+    while (index < nonq_map.size()) {
+      if (sampled_value < accum_sum) {
+        // This is the right index!
+        result_index = index;
+        break;
+      }
+      accum_sum = accum_sum + nonq_map[index].getValue();
+      index = index + 1;
+    }
+    rng_.uniformReal(nonq_map[result_index].getX() - half_cell_size,
+                     nonq_map[result_index].getX() + half_cell_size);
+    rng_.uniformReal(nonq_map[result_index].getX() - half_cell_size,
+                     nonq_map[result_index].getX() + half_cell_size);
+  }
 
   (state->as<ompl::base::SE2StateSpace::StateType>())->setX(sampled_x);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setY(sampled_y);
