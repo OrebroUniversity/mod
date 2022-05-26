@@ -16,6 +16,8 @@
  *   along with ompl_planners_ros.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <ompl/mod/objectives/MoDOptimizationObjective.h>
 
 #include <Eigen/Dense>
@@ -31,7 +33,7 @@ namespace MoD {
  * corresponding OMPL class.
  */
 class DTCOptimizationObjective : public MoDOptimizationObjective {
-  /// Maximum vehicle speed used in the computation of Down-The-CLiFF cost.
+/// Maximum vehicle speed used in the computation of Down-The-CLiFF cost.
   double max_vehicle_speed;
 
   /// Mahalanobis distance threshold.
@@ -47,29 +49,36 @@ class DTCOptimizationObjective : public MoDOptimizationObjective {
 
   bool use_intensity{false};
 
-public:
+ public:
   /**
    * Constructor
    * @param si SpaceInformationPtr that we get from the problem setup.
    */
   DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                           const ::MoD::CLiFFMap &cliffmap, double wd,
-                           double wq, double wc, double maxvs,
+                           const ::MoD::CLiFFMap &cliffmap,
+                           double wd,
+                           double wq,
+                           double wc,
+                           double maxvs,
                            double mahalanobis_distance_threshold = 10.0,
-                           bool use_mixing_factor = true);
-
-  DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                           const std::string &cliffmap_file_name, double wd,
-                           double wq, double wc, double maxvs,
-                           double mahalanobis_distance_threshold = 10.0,
-                           bool use_mixing_factor = true);
+                           bool use_mixing_factor = true,
+                           const std::string &sampler_type = "",
+                           const std::string &intensity_map_file_name = "",
+                           double bias = 0.05,
+                           bool debug = false);
 
   DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
                            const std::string &cliffmap_file_name,
                            const std::string &intensity_map_file_name,
-                           double wd, double wq, double wc, double maxvs,
+                           double wd,
+                           double wq,
+                           double wc,
+                           double maxvs,
                            double mahalanobis_distance_threshold = 10.0,
-                           bool use_mixing_factor = true);
+                           bool use_mixing_factor = true,
+                           const std::string &sampler_type = "",
+                           double bias = 0.05,
+                           bool debug = false);
 
   ~DTCOptimizationObjective() override = default;
 

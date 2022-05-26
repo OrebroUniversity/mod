@@ -29,26 +29,29 @@ namespace ompl {
 namespace MoD {
 
 class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
-protected:
+ protected:
   ::MoD::IntensityMap intensity_map_;
 
-public:
+ public:
   IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                    const std::string &file_name, double wd,
-                                    double wq, double wc);
+                                    const std::string &file_name,
+                                    double wd,
+                                    double wq,
+                                    double wc,
+                                    std::string sampler_type,
+                                    double sampler_bias,
+                                    bool sampler_debug);
 
-  virtual ~IntensityMapOptimizationObjective() = default;
+  ~IntensityMapOptimizationObjective() override = default;
 
   virtual inline bool isSymmetric() const override { return false; }
 
   ompl::base::Cost stateCost(const ompl::base::State *s) const override;
 
-  ompl::base::Cost motionCost(const ompl::base::State *s1,
-                              const ompl::base::State *s2) const override;
+  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 
   ompl::base::Cost
-  motionCostHeuristic(const ompl::base::State *s1,
-                      const ompl::base::State *s2) const override;
+  motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 };
 
 typedef std::shared_ptr<IntensityMapOptimizationObjective>

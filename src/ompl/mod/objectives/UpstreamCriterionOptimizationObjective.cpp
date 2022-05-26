@@ -20,11 +20,21 @@
 #include <ompl/mod/objectives/UpstreamCriterionOptimizationObjective.h>
 
 ompl::MoD::UpstreamCriterionOptimizationObjective::
-    UpstreamCriterionOptimizationObjective(
-        const ompl::base::SpaceInformationPtr &si,
-        const ompl::MoD::MapType &map_type, const std::string &map_file_name,
-        float wd, float wq, float wc)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, map_type) {
+UpstreamCriterionOptimizationObjective(
+    const ompl::base::SpaceInformationPtr &si,
+    const ompl::MoD::MapType &map_type, const std::string &map_file_name,
+    float wd, float wq, float wc, const std::string &sampler_type, const std::string &intensity_map_file_name,
+    double bias,
+    bool debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          map_type,
+                                          sampler_type,
+                                          intensity_map_file_name,
+                                          bias,
+                                          debug) {
   if (map_type == MapType::CLiFFMap) {
     cliffmap = std::make_shared<::MoD::CLiFFMap>(map_file_name);
     description_ = "Upstream Cost over CLiFF-map";
@@ -33,8 +43,8 @@ ompl::MoD::UpstreamCriterionOptimizationObjective::
     description_ = "Upstream Cost over GMMT-map";
   } else {
     BOOST_LOG_TRIVIAL(warning)
-        << "Only GMMT and CLiFF map are supported when using "
-           "UpstreamCriterion using a map file name.";
+      << "Only GMMT and CLiFF map are supported when using "
+         "UpstreamCriterion using a map file name.";
   }
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
@@ -53,10 +63,25 @@ ompl::MoD::UpstreamCriterionOptimizationObjective::
 }*/
 
 ompl::MoD::UpstreamCriterionOptimizationObjective::
-    UpstreamCriterionOptimizationObjective(
-        const ompl::base::SpaceInformationPtr &si,
-        const ::MoD::GMMTMap &gmmtmap, float wd, float wq, float wc)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::GMMTMap),
+UpstreamCriterionOptimizationObjective(
+    const ompl::base::SpaceInformationPtr &si,
+    const ::MoD::GMMTMap &gmmtmap,
+    float wd,
+    float wq,
+    float wc,
+    const std::string &sampler_type,
+    const std::string &intensity_map_file_name,
+    double bias,
+    bool debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          MapType::GMMTMap,
+                                          sampler_type,
+                                          intensity_map_file_name,
+                                          bias,
+                                          debug),
       gmmtmap(new ::MoD::GMMTMap(gmmtmap)) {
   description_ = "Upstream Cost over GMMT-map";
 
@@ -65,23 +90,20 @@ ompl::MoD::UpstreamCriterionOptimizationObjective::
 }
 
 ompl::MoD::UpstreamCriterionOptimizationObjective::
-    UpstreamCriterionOptimizationObjective(
-        const ompl::base::SpaceInformationPtr &si,
-        const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
-      cliffmap(new ::MoD::CLiFFMap(cliffmap)) {
-  description_ = "Upstream Cost over CLiFF-map";
-  // Setup a default cost-to-go heuristic:
-  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
-}
-
-ompl::MoD::UpstreamCriterionOptimizationObjective::
-    UpstreamCriterionOptimizationObjective(
-        const ompl::base::SpaceInformationPtr &si,
-        const ::MoD::CLiFFMap &cliffmap,
-        const std::string &intensity_map_file_name, double wd, double wq,
-        double wc)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+UpstreamCriterionOptimizationObjective(
+    const ompl::base::SpaceInformationPtr &si,
+    const ::MoD::CLiFFMap &cliffmap,
+    const std::string &intensity_map_file_name, double wd, double wq,
+    double wc, const std::string &sampler_type, double bias, bool debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          MapType::CLiFFMap,
+                                          sampler_type,
+                                          intensity_map_file_name,
+                                          bias,
+                                          debug),
       cliffmap(new ::MoD::CLiFFMap(cliffmap)),
       intensitymap(intensity_map_file_name) {
   description_ = "Upstream+q Cost over CLiFF-map";
@@ -146,20 +168,17 @@ ompl::base::Cost ompl::MoD::UpstreamCriterionOptimizationObjective::motionCost(
 
     double cost_c = 0.0;
     switch (map_type_) {
-    case MapType::GMMTMap:
-      cost_c = getGMMTMapCost(x, y, alpha);
-      break;
-    // case MapType::STeFMap:
-    //   cost_c = getSTeFMapCost(x, y, alpha);
-    //   break;
-    case MapType::CLiFFMap:
-      cost_c = getCLiFFMapCost(x, y, alpha);
-      break;
-    default:
-      BOOST_LOG_TRIVIAL(warning) << "Warning: motionCost() called with "
-                                    "MapType: %s. Returning identity cost.",
-          getMapTypeStr().c_str();
-      cost_c = this->identityCost().value();
+      case MapType::GMMTMap:cost_c = getGMMTMapCost(x, y, alpha);
+        break;
+        // case MapType::STeFMap:
+        //   cost_c = getSTeFMapCost(x, y, alpha);
+        //   break;
+      case MapType::CLiFFMap:cost_c = getCLiFFMapCost(x, y, alpha);
+        break;
+      default:BOOST_LOG_TRIVIAL(warning) << "Warning: motionCost() called with "
+                                            "MapType: %s. Returning identity cost.",
+              getMapTypeStr().c_str();
+        cost_c = this->identityCost().value();
     }
 
     total_cost +=
@@ -202,9 +221,9 @@ double ompl::MoD::UpstreamCriterionOptimizationObjective::getGMMTMapCost(
     double distance_between_gmmtmap_mean_and_current_state_xy =
         boost::geometry::distance(dist.first, ::MoD::Point2D(x, y));
     mod_cost += mixing_factor *
-                (1 - distance_between_gmmtmap_mean_and_current_state_xy /
-                         gmmtmap->getStdDev()) *
-                (1 - cos(alpha - dist_heading));
+        (1 - distance_between_gmmtmap_mean_and_current_state_xy /
+            gmmtmap->getStdDev()) *
+        (1 - cos(alpha - dist_heading));
   }
 
   return mod_cost;

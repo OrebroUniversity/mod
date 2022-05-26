@@ -37,30 +37,45 @@ class UpstreamCriterionOptimizationObjective
 
   bool use_intensity{false};
 
-public:
+ public:
   /** @todo : STeF Support
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
       const ::MoD::STeFMap &stefmap, float wd, float wq, float wc);
   */
   UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si, const ::MoD::GMMTMap &gmmtmap,
-      float wd, float wq, float wc);
-
-  UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
-      const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc);
+      const ::MoD::GMMTMap &gmmtmap,
+      float wd,
+      float wq,
+      float wc,
+      const std::string &sampler_type,
+      const std::string &intensity_map_file_name,
+      double bias,
+      bool debug);
 
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
       const ::MoD::CLiFFMap &cliffmap,
-      const std::string &intensity_map_file_name, double wd, double wq,
-      double wc);
+      const std::string &intensity_map_file_name,
+      double wd,
+      double wq,
+      double wc,
+      const std::string &sampler_type,
+      double bias,
+      bool debug);
 
   UpstreamCriterionOptimizationObjective(
       const ompl::base::SpaceInformationPtr &si,
-      const ompl::MoD::MapType &map_type, const std::string &map_file_name,
-      float wd, float wq, float wc);
+      const ompl::MoD::MapType &map_type,
+      const std::string &map_file_name,
+      float wd,
+      float wq,
+      float wc,
+      const std::string &sampler_type,
+      const std::string &intensity_map_file_name,
+      double bias,
+      bool debug);
 
   inline bool isSymmetric() const override { return false; }
 

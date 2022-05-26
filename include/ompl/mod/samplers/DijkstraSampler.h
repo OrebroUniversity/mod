@@ -10,18 +10,18 @@
 
 #include <memory>
 #include <vector>
+#include <fstream>
 
-#include <mod/gmmtmap.hpp>
-#include <mod/cliffmap.hpp>
-#include <ompl/base/ValidStateSampler.h>
+#include <boost/math/constants/constants.hpp>
+#include <ompl/base/samplers/InformedStateSampler.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
-#include <ompl/mod/objectives/MoDOptimizationObjective.h>
+#include <ompl/base/OptimizationObjective.h>
 #include <ompl/util/RandomNumbers.h>
 
 namespace ompl {
 namespace MoD {
 
-class DijkstraSampler : public ompl::base::ValidStateSampler {
+class DijkstraSampler : public ompl::base::InformedSampler {
 
   typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, boost::no_property,
                                 boost::property<boost::edge_weight_t, double>>
@@ -80,9 +80,6 @@ class DijkstraSampler : public ompl::base::ValidStateSampler {
     return static_cast<double>(row) * this->props_.cell_size + this->props_.y_min;
   }
  protected:
-  std::shared_ptr<::MoD::Base> mod_ptr_{nullptr};
-  ompl::base::OptimizationObjectivePtr opt_obj_{nullptr};
-
   props props_;
 
   std::array<double, 3> start_{0.0, 0.0, 0.0};
@@ -97,33 +94,22 @@ class DijkstraSampler : public ompl::base::ValidStateSampler {
 
   double bias_{0.05};
 
+  bool debug_{false};
+
+  std::fstream sampledPosesFile_;
+
   void addEdgeAndWeight(size_t row_i, size_t col_i, size_t row_f, size_t col_f);
 
  public:
-  DijkstraSampler(const ompl::base::SpaceInformation *si,
-                  const std::string &mod_map_file_name,
-                  const std::string &mod_type,
-                  const ompl::base::OptimizationObjectivePtr &opt,
-                  const std::array<double, 3> &start_state,
-                  const std::array<double, 3> &goal_state,
+  DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef,
+                  unsigned int maxCalls = 100,
                   double cell_size = 0.5,
-                  double bias = 0.05);
+                  double bias = 0.05, bool debug = false);
 
-  static ompl::base::ValidStateSamplerPtr allocate(const ompl::base::SpaceInformation *si,
-                                                   const std::string &mod_map_file_name,
-                                                   const std::string &mod_type,
-                                                   const ompl::base::OptimizationObjectivePtr &opt,
-                                                   const std::array<double, 3> &start_state,
-                                                   const std::array<double, 3> &goal_state,
-                                                   double cell_size = 0.5, double bias = 0.05) {
-    return std::make_shared<DijkstraSampler>(si,
-                                             mod_map_file_name,
-                                             mod_type,
-                                             opt,
-                                             start_state,
-                                             goal_state,
-                                             cell_size,
-                                             0.05);
+  static ompl::base::InformedSamplerPtr allocate(const ompl::base::ProblemDefinitionPtr &pdef,
+                                                 unsigned int maxCalls = 100,
+                                                 double cell_size = 0.5, double bias = 0.05, bool debug = false) {
+    return std::make_shared<DijkstraSampler>(pdef, maxCalls, cell_size, bias, debug);
   }
 
   inline void setStart(const std::array<double, 3> &start) { this->start_ = start; }
@@ -133,11 +119,18 @@ class DijkstraSampler : public ompl::base::ValidStateSampler {
 
   void setup();
 
-  bool sample(ompl::base::State *state) override;
+  bool sampleUniform(ompl::base::State *state, const ompl::base::Cost &maxCost) override;
 
-  inline bool sampleNear(ompl::base::State *state, const ompl::base::State *near, double distance) override {
-    return false;
+  inline bool sampleUniform(ompl::base::State *state,
+                            const ompl::base::Cost &minCost,
+                            const ompl::base::Cost &maxCost) override {
+    return sampleUniform(state, maxCost);
   }
+
+  inline bool hasInformedMeasure() const override { return false; }
+
+  inline double getInformedMeasure(const ompl::base::Cost &currentCost) const override { return this->space_->getMeasure(); }
+
 };
 
 } // namespace MoD

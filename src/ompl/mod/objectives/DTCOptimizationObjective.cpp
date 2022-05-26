@@ -23,9 +23,25 @@
 ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si,
     const std::string &cliffmap_file_name,
-    const std::string &intensity_map_file_name, double wd, double wq, double wc,
-    double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
+    const std::string &intensity_map_file_name,
+    double wd,
+    double wq,
+    double wc,
+    double maxvs,
+    double mahalanobis_distance_threshold,
+    bool use_mixing_factor,
+    const std::string &sampler_type,
+    double bias,
+    bool debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          MapType::CLiFFMap,
+                                          sampler_type,
+                                          intensity_map_file_name,
+                                          bias,
+                                          debug),
       max_vehicle_speed(maxvs), cliffmap(cliffmap_file_name),
       intensitymap(intensity_map_file_name),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
@@ -37,24 +53,28 @@ ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
 }
 
 ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
-    const ompl::base::SpaceInformationPtr &si, const ::MoD::CLiFFMap &cliffmap,
-    double wd, double wq, double wc, double maxvs,
-    double mahalanobis_distance_threshold, bool use_mixing_factor)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
-      max_vehicle_speed(maxvs), cliffmap(cliffmap),
-      mahalanobis_distance_threshold(mahalanobis_distance_threshold),
-      use_mixing_factor(use_mixing_factor) {
-  description_ = "DownTheCLiFF Cost";
-  // Setup a default cost-to-go heuristic:
-  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
-}
-
-ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si,
-    const std::string &cliffmap_file_name, double wd, double wq, double wc,
-    double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap),
-      max_vehicle_speed(maxvs), cliffmap(cliffmap_file_name),
+    const ::MoD::CLiFFMap &cliffmap,
+    double wd,
+    double wq,
+    double wc,
+    double maxvs,
+    double mahalanobis_distance_threshold,
+    bool use_mixing_factor,
+    const std::string &sampler_type,
+    const std::string &intensity_map_file_name,
+    double bias,
+    bool debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          MapType::CLiFFMap,
+                                          sampler_type,
+                                          intensity_map_file_name,
+                                          bias,
+                                          debug),
+      max_vehicle_speed(maxvs), cliffmap(cliffmap),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),
       use_mixing_factor(use_mixing_factor) {
   description_ = "DownTheCLiFF Cost";
@@ -97,7 +117,7 @@ ompl::base::Cost ompl::MoD::DTCOptimizationObjective::motionCost(
         *space->getValueAddressAtIndex(intermediate_states[i + 1], 2)};
 
     double dot = cos(state_b[2] / 2.0) * cos(state_a[2] / 2.0) +
-                 sin(state_b[2] / 2.0) * sin(state_a[2] / 2.0);
+        sin(state_b[2] / 2.0) * sin(state_a[2] / 2.0);
 
     // 4a. Compute Euclidean distance.
     double cost_d =

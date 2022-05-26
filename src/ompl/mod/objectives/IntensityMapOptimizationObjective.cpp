@@ -8,29 +8,33 @@
 namespace ompl {
 namespace MoD {
 
-IntensityMapOptimizationObjective::IntensityMapOptimizationObjective(
-    const ompl::base::SpaceInformationPtr &si, const std::string &file_name,
-    double wd, double wq, double wc)
+IntensityMapOptimizationObjective::IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
+                                                                     const std::string &file_name,
+                                                                     double wd,
+                                                                     double wq,
+                                                                     double wc,
+                                                                     std::string sampler_type,
+                                                                     double sampler_bias,
+                                                                     bool sampler_debug)
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc,
-                                          MapType::IntensityMap) {
+                                          MapType::IntensityMap, sampler_type, file_name, sampler_bias, sampler_debug) {
   this->intensity_map_ = ::MoD::IntensityMap(file_name);
   description_ = "Intensity Cost";
   // Setup a default cost-to-go heuristic:
   setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::base::Cost
-IntensityMapOptimizationObjective::stateCost(const ompl::base::State *s) const {
+ompl::base::Cost IntensityMapOptimizationObjective::stateCost(const ompl::base::State *s) const {
   return ompl::base::Cost(0.0);
 }
 
-ompl::base::Cost IntensityMapOptimizationObjective::motionCostHeuristic(
-    const ompl::base::State *s1, const ompl::base::State *s2) const {
+ompl::base::Cost IntensityMapOptimizationObjective::motionCostHeuristic(const ompl::base::State *s1,
+                                                                        const ompl::base::State *s2) const {
   return motionCost(s1, s2);
 }
 
-ompl::base::Cost IntensityMapOptimizationObjective::motionCost(
-    const ompl::base::State *s1, const ompl::base::State *s2) const {
+ompl::base::Cost IntensityMapOptimizationObjective::motionCost(const ompl::base::State *s1,
+                                                               const ompl::base::State *s2) const {
   auto space = si_->getStateSpace();
   // 1. Declare the intermediate states.
   std::vector<ompl::base::State *> intermediate_states;
@@ -59,7 +63,7 @@ ompl::base::Cost IntensityMapOptimizationObjective::motionCost(
         *space->getValueAddressAtIndex(intermediate_states[i + 1], 2)};
 
     double dot = cos(state_b[2] / 2.0) * cos(state_a[2] / 2.0) +
-                 sin(state_b[2] / 2.0) * sin(state_a[2] / 2.0);
+        sin(state_b[2] / 2.0) * sin(state_a[2] / 2.0);
 
     double cost_d =
         si_->distance(intermediate_states[i], intermediate_states[i + 1]);

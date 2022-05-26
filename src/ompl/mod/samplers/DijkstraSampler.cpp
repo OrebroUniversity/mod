@@ -1,39 +1,48 @@
 #include <ompl/mod/samplers/DijkstraSampler.h>
 
 #include <ompl/base/SpaceInformation.h>
+#include <ompl/base/goals/GoalSampleableRegion.h>
+#include <ompl/base/goals/GoalState.h>
 
 #include <utility>
 
 namespace ompl {
 namespace MoD {
-DijkstraSampler::DijkstraSampler(const ompl::base::SpaceInformation *si,
-                                 const std::string &mod_map_file_name,
-                                 const std::string &mod_type,
-                                 const ompl::base::OptimizationObjectivePtr &opt,
-                                 const std::array<double, 3> &start_state,
-                                 const std::array<double, 3> &goal_state,
-                                 double cell_size, double bias) :
-    ompl::base::ValidStateSampler(si),
-    opt_obj_(opt),
-    start_(start_state),
-    goal_(goal_state),
-    bias_(bias) {
+DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef,
+                                 unsigned int maxCalls,
+                                 double cell_size, double bias, bool debug) :
+    ompl::base::InformedSampler(pdef, maxCalls),
+    bias_(bias),
+    debug_(debug) {
   this->props_.cell_size = cell_size;
-  if (mod_type == "cliffmap" || mod_type == "CLiFF-map") {
-    mod_ptr_ = std::make_shared<::MoD::CLiFFMap>(mod_map_file_name);
-  } else if (mod_type == "gmmtmap" || mod_type == "GMMT-map") {
-    mod_ptr_ = std::make_shared<::MoD::GMMTMap>(mod_map_file_name);
-  } else {
-    BOOST_LOG_TRIVIAL(error) << "This isn't implemented yet for your mod type: " << mod_type;
-  }
 
-  this->name_ = "Dijkstra Sampler with " + mod_type;
+  start_ = {(probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
+            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
+            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getYaw()};
+
+  ompl::base::State *goal_state = probDefn_->getGoal()->as<ompl::base::GoalState>()->getState();
+  goal_ = {(goal_state->as<ompl::base::SE2StateSpace::StateType>())->getX(),
+           (goal_state->as<ompl::base::SE2StateSpace::StateType>())->getY(),
+           (goal_state->as<ompl::base::SE2StateSpace::StateType>())->getYaw()};
+
   setup();
+
+  if (debug_) {
+    sampledPosesFile_.open("/home/ksatyaki/samples_dijkstra.csv", std::fstream::out);
+    if (sampledPosesFile_.is_open()) {
+      OMPL_INFORM("Debug Enabled.");
+      sampledPosesFile_ << "x,y,choice" << std::endl;
+    } else {
+      OMPL_INFORM("Couldn't open file for debug.");
+    }
+  } else {
+    OMPL_INFORM("Debug disabled.");
+  }
 }
 
 double DijkstraSampler::getCost(double xi, double yi, double xf, double yf) {
-  ompl::base::State *first = si_->allocState();
-  ompl::base::State *next = si_->allocState();
+  ompl::base::State *first = probDefn_->getSpaceInformation()->allocState();
+  ompl::base::State *next = probDefn_->getSpaceInformation()->allocState();
 
   (first->as<ompl::base::SE2StateSpace::StateType>())->setX(xi);
   (first->as<ompl::base::SE2StateSpace::StateType>())->setY(yi);
@@ -43,17 +52,17 @@ double DijkstraSampler::getCost(double xi, double yi, double xf, double yf) {
   (next->as<ompl::base::SE2StateSpace::StateType>())->setY(yf);
   (next->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
 
-  auto cost = opt_obj_->motionCost(first, next).value();
+  auto cost = opt_->motionCost(first, next).value();
 
-  si_->freeState(first);
-  si_->freeState(next);
+  probDefn_->getSpaceInformation()->freeState(first);
+  probDefn_->getSpaceInformation()->freeState(next);
 
   return cost;
 }
 
 bool DijkstraSampler::checkValidity(double xi, double yi, double xf, double yf) {
-  ompl::base::State *first = si_->allocState();
-  ompl::base::State *next = si_->allocState();
+  ompl::base::State *first = probDefn_->getSpaceInformation()->allocState();
+  ompl::base::State *next = probDefn_->getSpaceInformation()->allocState();
 
   (first->as<ompl::base::SE2StateSpace::StateType>())->setX(xi);
   (first->as<ompl::base::SE2StateSpace::StateType>())->setY(yi);
@@ -63,15 +72,15 @@ bool DijkstraSampler::checkValidity(double xi, double yi, double xf, double yf) 
   (next->as<ompl::base::SE2StateSpace::StateType>())->setY(yf);
   (next->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
 
-  auto checker = si_->getStateValidityChecker();
+  auto checker = probDefn_->getSpaceInformation()->getStateValidityChecker();
   bool valid = true;
   if (checker != nullptr) {
     valid = checker->isValid(first) && checker->isValid(next);
   } else {
     std::cout << "SHITE";
   }
-  si_->freeState(first);
-  si_->freeState(next);
+  probDefn_->getSpaceInformation()->freeState(first);
+  probDefn_->getSpaceInformation()->freeState(next);
 
   return valid;
 }
@@ -102,7 +111,8 @@ void DijkstraSampler::addEdgeAndWeight(size_t row_i, size_t col_i, size_t row_f,
 }
 
 void DijkstraSampler::setup() {
-  const ompl::base::RealVectorBounds state_bounds = si_->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
+  const ompl::base::RealVectorBounds
+      state_bounds = probDefn_->getSpaceInformation()->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
   const auto x_min = state_bounds.low[0];
   const auto x_max = state_bounds.high[0];
   const auto y_min = state_bounds.low[1];
@@ -237,16 +247,16 @@ void DijkstraSampler::setup() {
   BOOST_LOG_TRIVIAL(info) << "Found a path: " << path_.size() << " nodes... " << "Cost: " << cost;
 }
 
-bool DijkstraSampler::sample(ompl::base::State *state) {
+bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::Cost &cost) {
   size_t sampled_col = 0;
   size_t sampled_row = 0;
   double sampled_theta;
 
   double randomValue = rng_.uniformReal(0.0, 1.0);
-
+  bool uniform = false;
   // At a bias_ % probability, choose a row, col from the dijkstra path
   if (randomValue < bias_) {
-
+    uniform = false;
     auto idx = rng_.uniformInt(0, this->path_.size() - 1);
     auto iter = path_.begin();
     std::advance(iter, idx);
@@ -268,6 +278,7 @@ bool DijkstraSampler::sample(ompl::base::State *state) {
     }
 
   } else {
+    uniform = true;
     sampled_col = rng_.uniformInt(0, this->props_.cols - 1);
     sampled_row = rng_.uniformInt(0, this->props_.rows - 1);
     sampled_theta = rng_.uniformReal(-boost::math::constants::pi<double>(),
@@ -284,6 +295,11 @@ bool DijkstraSampler::sample(ompl::base::State *state) {
   (state->as<ompl::base::SE2StateSpace::StateType>())->setX(sampled_x);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setY(sampled_y);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setYaw(sampled_theta);
+
+  if (debug_) {
+    sampledPosesFile_ << sampled_x << "," << sampled_y << "," << (uniform ? "uniform" : "intensity") << std::endl;
+    sampledPosesFile_.flush();
+  }
   return true;
 }
 

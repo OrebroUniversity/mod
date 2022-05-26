@@ -1,14 +1,16 @@
 #pragma once
 
 #include <memory>
+#include <fstream>
 #include <mod/cliffmap.hpp>
-#include <ompl/base/ValidStateSampler.h>
+
+#include <ompl/base/samplers/InformedStateSampler.h>
 #include <ompl/util/RandomNumbers.h>
 
 namespace ompl {
 namespace MoD {
 
-class IntensityMapSampler : public ompl::base::ValidStateSampler {
+class IntensityMapSampler : public ompl::base::InformedSampler {
 
  private:
   bool checkValidity(double xi, double yi);
@@ -42,26 +44,45 @@ class IntensityMapSampler : public ompl::base::ValidStateSampler {
 
   ompl::RNG rng_;
 
- public:
-  IntensityMapSampler(const ompl::base::SpaceInformation *si, const ::MoD::IntensityMap &q_map, double bias);
+  bool debug_{false};
 
-  IntensityMapSampler(const ompl::base::SpaceInformation *si, const std::string &intensity_map_file_name, double bias);
+  std::fstream sampledPosesFile_;
+
+ public:
+  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
+                      unsigned int maxCalls,
+                      const ::MoD::IntensityMap &q_map,
+                      double bias,
+                      bool debug = false);
+
+  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
+                      unsigned int maxCalls,
+                      const std::string &intensity_map_file_name,
+                      double bias = 0.5,
+                      bool debug = false);
 
   void setup(const ::MoD::IntensityMap &intensity_map);
 
-  bool sample(ompl::base::State *state) override;
+  bool sampleUniform(ompl::base::State *state, const ompl::base::Cost &maxCost) override;
+
+  inline bool sampleUniform(ompl::base::State *state,
+                            const ompl::base::Cost &minCost,
+                            const ompl::base::Cost &maxCost) override {
+    return sampleUniform(state, maxCost);
+  }
+
+  inline bool hasInformedMeasure() const override { return false; }
+
+  inline double getInformedMeasure(const ompl::base::Cost &currentCost) const override { return this->space_->getMeasure(); }
 
   void sampleNecessarilyValid(ompl::base::State *state);
 
-  inline bool sampleNear(ompl::base::State *state, const ompl::base::State *near,
-                         double distance) override {
-    return false;
-  }
-
-  static ompl::base::ValidStateSamplerPtr
-  allocate(const ompl::base::SpaceInformation *si,
-           const std::string &intensity_map_file_name, double bias) {
-    return std::make_shared<IntensityMapSampler>(si, intensity_map_file_name, bias);
+  static ompl::base::InformedSamplerPtr allocate(const ompl::base::ProblemDefinitionPtr &pdef,
+                                                 unsigned int maxCalls,
+                                                 const std::string &intensity_map_file_name,
+                                                 double bias = 0.5,
+                                                 bool debug = false) {
+    return std::make_shared<IntensityMapSampler>(pdef, maxCalls, intensity_map_file_name, bias, debug);
   }
 };
 
