@@ -277,6 +277,9 @@ bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::
       sampled_theta = atan2(-rowToY(sampled_row) + rowToY(next_row), -colToX(sampled_col) + colToX(next_col));
     }
 
+    sampled_theta = rng_.uniformReal(sampled_theta - (boost::math::constants::pi<double>() / 16.0),
+                                     sampled_theta + (boost::math::constants::pi<double>() / 16.0));
+
   } else {
     uniform = true;
     sampled_col = rng_.uniformInt(0, this->props_.cols - 1);

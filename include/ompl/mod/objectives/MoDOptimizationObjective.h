@@ -46,7 +46,7 @@ struct Cost {
   /// The last computed MoD cost
   double cost_c_{0.0};
 
-  inline Cost operator+(Cost b) {
+  inline Cost operator+(Cost b) const {
     Cost result;
     result.cost_c_ = this->cost_c_ + b.cost_c_;
     result.cost_d_ = this->cost_d_ + b.cost_d_;
