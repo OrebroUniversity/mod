@@ -19,17 +19,14 @@
 
 #pragma once
 
-#include <array>
-#include <vector>
-
 #include <Eigen/Core>
-
+#include <array>
 #include <boost/chrono.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
-
 #include <mod/base.hpp>
+#include <vector>
 
 namespace MoD {
 
@@ -59,9 +56,7 @@ struct GMMTMapCluster {
    * \param mean A vector of 2D means for the @K_ Gaussians.
    * \param heading A vector of approximate headings.
    */
-  inline GMMTMapCluster(double pi,
-                        const std::vector<std::array<double, 2>> &mean,
-                        std::vector<double> heading) {
+  inline GMMTMapCluster(double pi, const std::vector<std::array<double, 2>> &mean, std::vector<double> heading) {
     this->mixing_factor = pi;
     this->mean = mean;
     this->heading = heading;
@@ -69,7 +64,7 @@ struct GMMTMapCluster {
 };
 
 class GMMTMap : public Base {
-public:
+ public:
   /**
    * \brief Constructor that reads a GMMTMap from an xml file.
    * \param fileName Filename of XML file.
@@ -99,9 +94,7 @@ public:
    */
   std::vector<TreeValue> getNearestNeighbors(double x, double y) const;
 
-  inline std::vector<TreeValue> operator()(double x, double y) const {
-    return this->getNearestNeighbors(x, y);
-  };
+  inline std::vector<TreeValue> operator()(double x, double y) const { return this->getNearestNeighbors(x, y); };
 
   /**
    * \brief Get the number of motion patterns in this GMMT-map.
@@ -137,28 +130,25 @@ public:
   }
 
   inline double getHeadingAtDist(size_t cluster_idx, size_t mean_idx) {
-
     if (cluster_idx >= this->clusters_.size()) {
       BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with cluster_idx "
                                   ">= number of clusters.";
-      BOOST_LOG_TRIVIAL(error) << "Total clusters: " << this->clusters_.size()
-                               << ", Cluster ID: " << cluster_idx;
+      BOOST_LOG_TRIVIAL(error) << "Total clusters: " << this->clusters_.size() << ", Cluster ID: " << cluster_idx;
       return 0.0;
     }
 
     if (mean_idx >= this->clusters_[cluster_idx].heading.size()) {
       BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with mean_idx >= "
                                   "number of traj-means in cluster.";
-      BOOST_LOG_TRIVIAL(error)
-          << "Total means: " << this->clusters_[cluster_idx].heading.size()
-          << ", Cluster ID and Mean ID: " << cluster_idx << ", " << mean_idx;
+      BOOST_LOG_TRIVIAL(error) << "Total means: " << this->clusters_[cluster_idx].heading.size()
+                               << ", Cluster ID and Mean ID: " << cluster_idx << ", " << mean_idx;
       return 0.0;
     }
 
     return this->clusters_[cluster_idx].heading[mean_idx];
   }
 
-protected:
+ protected:
   /// The number of motion patterns in the GMM Trajectory Map.
   int M_;
 
@@ -179,4 +169,4 @@ protected:
 typedef std::shared_ptr<GMMTMap> GMMTMapPtr;
 typedef std::shared_ptr<const GMMTMap> GMMTMapConstPtr;
 
-} // namespace MoD
+}  // namespace MoD

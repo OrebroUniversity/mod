@@ -27,8 +27,9 @@ class Base {
   /// Frame ID in the ROS message. Might be used for transformation. Right now,
   /// it is only used to fill in the ROS message's header.frame_id.
   std::string frame_id_;
+
  public:
-   /**
+  /**
    * \brief Get the Frame ID used in ROS messages.
    * \return ROS message header.frame_id.
    */
@@ -37,8 +38,6 @@ class Base {
   /**
    * \brief Set the frame ID in ROS message.
    */
-  inline void setFrameID(const std::string &frame_id) {
-    this->frame_id_ = frame_id;
-  }
+  inline void setFrameID(const std::string &frame_id) { this->frame_id_ = frame_id; }
 };
-}
+}  // namespace MoD

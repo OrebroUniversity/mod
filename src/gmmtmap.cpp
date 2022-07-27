@@ -27,14 +27,11 @@ namespace MoD {
 std::vector<TreeValue> GMMTMap::getNearestNeighbors(double x, double y) const {
   std::vector<TreeValue> returned;
   Point2D query_pt(x, y);
-  Box query_box(Point2D(query_pt.get<0>() - this->stddev_,
-                        query_pt.get<1>() - this->stddev_),
-                Point2D(query_pt.get<0>() + this->stddev_,
-                        query_pt.get<1>() + this->stddev_));
+  Box query_box(Point2D(query_pt.get<0>() - this->stddev_, query_pt.get<1>() - this->stddev_),
+                Point2D(query_pt.get<0>() + this->stddev_, query_pt.get<1>() + this->stddev_));
 
-  rtree_.query(bgi::within(query_box) && bgi::satisfies([&](TreeValue V) {
-                 return bg::distance(V.first, query_pt) < this->stddev_;
-               }),
+  rtree_.query(bgi::within(query_box) &&
+                   bgi::satisfies([&](TreeValue V) { return bg::distance(V.first, query_pt) < this->stddev_; }),
                std::back_inserter(returned));
 
   std::sort(returned.begin(), returned.end(), [&](TreeValue a, TreeValue b) {
@@ -59,24 +56,20 @@ void GMMTMap::computeHeadingAndConstructRTree() {
     auto &cluster = this->clusters_[index];
 
     for (size_t i = 0; i < cluster.mean.size(); i++) {
-
       const auto &point = cluster.mean[i];
       double heading;
 
       if (i == 0) {
-        heading = atan2(cluster.mean[i + 1][1] - cluster.mean[i][1],
-                        cluster.mean[i + 1][0] - cluster.mean[i][0]);
+        heading = atan2(cluster.mean[i + 1][1] - cluster.mean[i][1], cluster.mean[i + 1][0] - cluster.mean[i][0]);
       } else if (i + 1 == this->clusters_.size()) {
-        heading = atan2(cluster.mean[i][1] - cluster.mean[i - 1][1],
-                        cluster.mean[i][0] - cluster.mean[i - 1][0]);
+        heading = atan2(cluster.mean[i][1] - cluster.mean[i - 1][1], cluster.mean[i][0] - cluster.mean[i - 1][0]);
       } else {
-        heading = atan2(cluster.mean[i + 1][1] - cluster.mean[i - 1][1],
-                        cluster.mean[i + 1][0] - cluster.mean[i - 1][0]);
+        heading =
+            atan2(cluster.mean[i + 1][1] - cluster.mean[i - 1][1], cluster.mean[i + 1][0] - cluster.mean[i - 1][0]);
       }
 
       cluster.heading.push_back(heading);
-      this->rtree_.insert(std::make_pair(Point2D(point[0], point[1]),
-                                         std::array<size_t, 2>({index, i})));
+      this->rtree_.insert(std::make_pair(Point2D(point[0], point[1]), std::array<size_t, 2>({index, i})));
     }
   }
 }
@@ -95,15 +88,13 @@ void GMMTMap::readFromXML(const std::string &fileName) {
     GMMTMapCluster cluster;
     cluster.mixing_factor = vCluster.second.get<double>("pi");
     for (const auto &vPoint : vCluster.second.get_child("mean")) {
-      cluster.mean.push_back(
-          {vPoint.second.get<double>("x"), vPoint.second.get<double>("y")});
+      cluster.mean.push_back({vPoint.second.get<double>("x"), vPoint.second.get<double>("y")});
     }
     this->clusters_.push_back(cluster);
   }
 
   this->computeHeadingAndConstructRTree();
-  BOOST_LOG_TRIVIAL(info) << "Read a GMMT-map with " << this->M_
-                          << " clusters each containing " << this->K_
+  BOOST_LOG_TRIVIAL(info) << "Read a GMMT-map with " << this->M_ << " clusters each containing " << this->K_
                           << " gaussians";
 }
-} // namespace MoD
+}  // namespace MoD

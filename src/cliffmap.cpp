@@ -18,15 +18,12 @@
  */
 
 #include <Eigen/Dense>
-#include <cmath>
-
+#include <boost/log/trivial.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <mod/cliffmap.hpp>
-
+#include <cmath>
 #include <iostream>
-
-#include <boost/log/trivial.hpp>
+#include <mod/cliffmap.hpp>
 
 namespace MoD {
 
@@ -58,11 +55,9 @@ void IntensityMap::readFromXML(const std::string &fileName) {
   this->values_.resize(this->rows_ * this->columns_);
 
   for (const auto &cell : pTree.get_child("map.cells")) {
-    if (cell.second.get<size_t>("row") * this->columns_ +
-            cell.second.get<size_t>("col") <
+    if (cell.second.get<size_t>("row") * this->columns_ + cell.second.get<size_t>("col") <
         this->rows_ * this->columns_) {
-      this->values_[cell.second.get<size_t>("row") * this->columns_ +
-                    cell.second.get<size_t>("col")] =
+      this->values_[cell.second.get<size_t>("row") * this->columns_ + cell.second.get<size_t>("col")] =
           cell.second.get<double>("value");
     }
   }
@@ -90,15 +85,13 @@ void CLiFFMap::readFromXML(const std::string &fileName) {
     location.id = vLocation.second.get<size_t>("id");
 
     for (const auto &vLocProperty : vLocation.second.get_child("")) {
-      if (vLocProperty.first == "p")
-        try {
+      if (vLocProperty.first == "p") try {
           location.p = vLocation.second.get<double>("p");
         } catch (std::exception &ex) {
           location.p = 1.0;
         }
 
-      if (vLocProperty.first == "q")
-        try {
+      if (vLocProperty.first == "q") try {
           location.q = vLocation.second.get<double>("q");
         } catch (std::exception &ex) {
           location.q = 1.0;
@@ -144,9 +137,7 @@ CLiFFMapLocation CLiFFMap::at(size_t row, size_t col) const {
   return locations_[row * columns_ + col];
 }
 
-CLiFFMapLocation CLiFFMap::atId(size_t id) const {
-  return locations_[id - (size_t)1];
-}
+CLiFFMapLocation CLiFFMap::atId(size_t id) const { return locations_[id - (size_t)1]; }
 
 CLiFFMapLocation CLiFFMap::operator()(double x, double y) const {
   size_t row = y2index(y);
@@ -154,8 +145,7 @@ CLiFFMapLocation CLiFFMap::operator()(double x, double y) const {
   return this->at(row, col);
 }
 
-double CLiFFMap::getLikelihood(double x, double y, double heading,
-                               double speed) const {
+double CLiFFMap::getLikelihood(double x, double y, double heading, double speed) const {
   CLiFFMapLocation loc = (*this)(x, y);
   Eigen::Vector2d V;
   V[0] = heading;
@@ -177,8 +167,8 @@ double CLiFFMap::getLikelihood(double x, double y, double heading,
 
     double mahalanobis_sq = (V - myu).transpose() * Sigma.inverse() * (V - myu);
 
-    likelihood += (1 / (2 * M_PI)) * (1 / sqrt(Sigma.determinant())) *
-                  exp(-0.5 * mahalanobis_sq) * dist.getMixingFactor();
+    likelihood +=
+        (1 / (2 * M_PI)) * (1 / sqrt(Sigma.determinant())) * exp(-0.5 * mahalanobis_sq) * dist.getMixingFactor();
   }
   return likelihood;
 }
@@ -200,8 +190,7 @@ double CLiFFMap::getBestHeading(double x, double y) const {
     myu[0] = atan2(sin(dist.getMeanHeading()), cos(dist.getMeanHeading()));
     myu[1] = dist.getMeanSpeed();
 
-    double likelihood = (1 / (2 * M_PI)) * (1 / sqrt(Sigma.determinant())) *
-                        dist.getMixingFactor();
+    double likelihood = (1 / (2 * M_PI)) * (1 / sqrt(Sigma.determinant())) * dist.getMixingFactor();
     if (likelihood > best_likelihood) {
       best_likelihood = likelihood;
       best_heading = myu[0];
@@ -219,14 +208,10 @@ void CLiFFMap::organizeAsGrid() {
   organizedLocations.resize(rows_ * columns_);
 
   if (organizedLocations.size() != locations_.size()) {
-    BOOST_LOG_TRIVIAL(warning)
-        << "[CLiFFMap] Error in number of locations. We thought it was "
-        << organizedLocations.size() << ", but it was " << locations_.size()
-        << ".";
-    if (organizedLocations.size() < locations_.size())
-      return;
-    BOOST_LOG_TRIVIAL(warning)
-        << "Less is more. We have the space. Let's continue... ";
+    BOOST_LOG_TRIVIAL(warning) << "[CLiFFMap] Error in number of locations. We thought it was "
+                               << organizedLocations.size() << ", but it was " << locations_.size() << ".";
+    if (organizedLocations.size() < locations_.size()) return;
+    BOOST_LOG_TRIVIAL(warning) << "Less is more. We have the space. Let's continue... ";
   }
 
   for (const CLiFFMapLocation &location : locations_) {
@@ -241,22 +226,19 @@ void CLiFFMap::organizeAsGrid() {
       organizedLocations[idx].q = location.q;
       organizedLocations[idx].position = location.position;
     } else {
-      BOOST_LOG_TRIVIAL(info) << 1,
-          "Some new locations were added while organizing...";
+      BOOST_LOG_TRIVIAL(info) << 1, "Some new locations were added while organizing...";
       organizedLocations.push_back(location);
     }
   }
   locations_ = organizedLocations;
   organized_ = true;
 
-  BOOST_LOG_TRIVIAL(info) << "[CLiFFMap] Organized a cliffmap with resolution: "
-                          << getResolution() << " m/cell.";
+  BOOST_LOG_TRIVIAL(info) << "[CLiFFMap] Organized a cliffmap with resolution: " << getResolution() << " m/cell.";
 }
 
-} // namespace MoD
+}  // namespace MoD
 
-std::ostream &operator<<(std::ostream &out,
-                         const MoD::CLiFFMapDistribution &dist) {
+std::ostream &operator<<(std::ostream &out, const MoD::CLiFFMapDistribution &dist) {
   out << "Mixing Factor: " << dist.mixing_factor << "\t";
   out << "Mean: [" << dist.mean[0] << "," << dist.mean[1] << "]" << std::endl;
   return out;
@@ -264,8 +246,7 @@ std::ostream &operator<<(std::ostream &out,
 
 std::ostream &operator<<(std::ostream &out, const MoD::CLiFFMapLocation &loc) {
   out << "Position: [" << loc.position[0] << ", " << loc.position[1] << "]\n";
-  for (const auto &dist : loc.distributions)
-    out << "Distribution: " << dist;
+  for (const auto &dist : loc.distributions) out << "Distribution: " << dist;
   return out;
 }
 

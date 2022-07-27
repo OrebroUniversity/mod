@@ -1,19 +1,33 @@
-#include <ompl/mod/samplers/DijkstraSampler.h>
+/*
+ *   Copyright (c) 2019 Chittaranjan Srinivas Swaminathan
+ *   This file is part of Maps of Dynamics library (libmod).
+ *
+ *   ompl_mod_objectives is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   ompl_mod_objectives is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with ompl_planners_ros.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/base/goals/GoalState.h>
+#include <ompl/mod/samplers/DijkstraSampler.h>
 
 #include <utility>
 
 namespace ompl {
 namespace MoD {
-DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef,
-                                 unsigned int maxCalls,
-                                 double cell_size, double bias, bool debug) :
-    ompl::base::InformedSampler(pdef, maxCalls),
-    bias_(bias),
-    debug_(debug) {
+DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls, double cell_size,
+                                 double bias, bool debug)
+    : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
   this->props_.cell_size = cell_size;
 
   start_ = {(probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
@@ -107,12 +121,12 @@ void DijkstraSampler::addEdgeAndWeight(size_t row_i, size_t col_i, size_t row_f,
 
   edges_.emplace_back(row_i * this->props_.cols + col_i, row_f * this->props_.cols + col_f);
   weights_.push_back(getCost(row_i, col_i, row_f, col_f));
-  //weights_.push_back(distance(row_i, col_i, row_f, col_f));
+  // weights_.push_back(distance(row_i, col_i, row_f, col_f));
 }
 
 void DijkstraSampler::setup() {
-  const ompl::base::RealVectorBounds
-      state_bounds = probDefn_->getSpaceInformation()->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
+  const ompl::base::RealVectorBounds state_bounds =
+      probDefn_->getSpaceInformation()->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
   const auto x_min = state_bounds.low[0];
   const auto x_max = state_bounds.high[0];
   const auto y_min = state_bounds.low[1];
@@ -184,9 +198,9 @@ void DijkstraSampler::setup() {
 
   if (edges_.size() != this->props_.total_edges) {
     BOOST_LOG_TRIVIAL(error)
-      << "Surely, the number of edges has reduced due to invalid ones not being added. We added: " << edges_.size()
-      << " edges and " << weights_.size() << " weights, but would have added " << total_edges
-      << " if we considered the bad apples.";
+        << "Surely, the number of edges has reduced due to invalid ones not being added. We added: " << edges_.size()
+        << " edges and " << weights_.size() << " weights, but would have added " << total_edges
+        << " if we considered the bad apples.";
   }
 
   SamplingGraph graph_(edges_.begin(), edges_.end(), weights_.begin(), num_nodes);
@@ -209,9 +223,10 @@ void DijkstraSampler::setup() {
   SamplingGraphVertexDescriptor sVertexDescriptor = boost::vertex(start_row * this->props_.cols + start_col, graph_);
   SamplingGraphVertexDescriptor gVertexDescriptor = boost::vertex(goal_row * this->props_.cols + goal_col, graph_);
 
-  boost::dijkstra_shortest_paths(graph_, sVertexDescriptor, boost::predecessor_map(boost::make_iterator_property_map(
-      p.begin(), boost::get(boost::vertex_index, graph_))).distance_map(boost::make_iterator_property_map(
-      d.begin(), boost::get(boost::vertex_index, graph_))));
+  boost::dijkstra_shortest_paths(
+      graph_, sVertexDescriptor,
+      boost::predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, graph_)))
+          .distance_map(boost::make_iterator_property_map(d.begin(), boost::get(boost::vertex_index, graph_))));
 
   BOOST_LOG_TRIVIAL(info) << "Ran Dijkstra...";
   path_.clear();
@@ -244,7 +259,8 @@ void DijkstraSampler::setup() {
     x_prev = x_this;
     y_prev = y_this;
   }
-  BOOST_LOG_TRIVIAL(info) << "Found a path: " << path_.size() << " nodes... " << "Cost: " << cost;
+  BOOST_LOG_TRIVIAL(info) << "Found a path: " << path_.size() << " nodes... "
+                          << "Cost: " << cost;
 }
 
 bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::Cost &cost) {
@@ -284,16 +300,13 @@ bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::
     uniform = true;
     sampled_col = rng_.uniformInt(0, this->props_.cols - 1);
     sampled_row = rng_.uniformInt(0, this->props_.rows - 1);
-    sampled_theta = rng_.uniformReal(-boost::math::constants::pi<double>(),
-                                     boost::math::constants::pi<double>());
+    sampled_theta = rng_.uniformReal(-boost::math::constants::pi<double>(), boost::math::constants::pi<double>());
   }
 
-  double sampled_x =
-      rng_.uniformReal(colToX(sampled_col) - this->props_.cell_size / 2.0,
-                       colToX(sampled_col) + this->props_.cell_size / 2.0);
-  double sampled_y =
-      rng_.uniformReal(rowToY(sampled_row) - this->props_.cell_size / 2.0,
-                       rowToY(sampled_row) + this->props_.cell_size / 2.0);
+  double sampled_x = rng_.uniformReal(colToX(sampled_col) - this->props_.cell_size / 2.0,
+                                      colToX(sampled_col) + this->props_.cell_size / 2.0);
+  double sampled_y = rng_.uniformReal(rowToY(sampled_row) - this->props_.cell_size / 2.0,
+                                      rowToY(sampled_row) + this->props_.cell_size / 2.0);
 
   (state->as<ompl::base::SE2StateSpace::StateType>())->setX(sampled_x);
   (state->as<ompl::base::SE2StateSpace::StateType>())->setY(sampled_y);
@@ -306,5 +319,5 @@ bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::
   return true;
 }
 
-}
-}
+}  // namespace MoD
+}  // namespace ompl

@@ -20,9 +20,6 @@
 #pragma once
 
 #include <array>
-#include <cmath>
-#include <vector>
-
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
@@ -30,8 +27,9 @@
 #include <boost/graph/iteration_macros.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/property_map/property_map.hpp>
-
+#include <cmath>
 #include <mod/base.hpp>
+#include <vector>
 
 namespace MoD {
 
@@ -49,9 +47,7 @@ class IntensityMap : public Base {
 
  public:
   inline IntensityMap() = default;
-  inline explicit IntensityMap(const std::string &fileName) {
-    this->readFromXML(fileName);
-  }
+  inline explicit IntensityMap(const std::string &fileName) { this->readFromXML(fileName); }
 
   inline double getXMax() const { return x_max_; }
   inline double getYMax() const { return y_max_; }
@@ -74,8 +70,7 @@ class IntensityMap : public Base {
     size_t col = index % this->columns_;
     size_t row = static_cast<size_t>(index / this->columns_);
 
-    return {(((double) col * this->cell_size_) + this->x_min_),
-            (((double) row * this->cell_size_) + this->y_min_)};
+    return {(((double)col * this->cell_size_) + this->x_min_), (((double)row * this->cell_size_) + this->y_min_)};
   }
 };
 
@@ -155,25 +150,16 @@ class CLiFFMap : public Base {
 
   std::vector<CLiFFMapLocation> locations_;
 
-  inline double index2x(size_t col) const {
-    return (((double) col * resolution_) + x_min_);
-  }
-  inline double index2y(size_t row) const {
-    return (((double) row * resolution_) + y_min_);
-  }
-  inline size_t x2index(double x) const {
-    return std::round((x - x_min_) / resolution_);
-  }
-  inline size_t y2index(double y) const {
-    return std::round((y - y_min_) / resolution_);
-  }
+  inline double index2x(size_t col) const { return (((double)col * resolution_) + x_min_); }
+  inline double index2y(size_t row) const { return (((double)row * resolution_) + y_min_); }
+  inline size_t x2index(double x) const { return std::round((x - x_min_) / resolution_); }
+  inline size_t y2index(double y) const { return std::round((y - y_min_) / resolution_); }
 
   CLiFFMap() = default;
 
   inline explicit CLiFFMap(const std::string &fileName, bool organize = false) {
     readFromXML(fileName);
-    if (organize)
-      organizeAsGrid();
+    if (organize) organizeAsGrid();
   }
   /**
    * Calling this function makes the locations accessible as a grid.
@@ -202,15 +188,13 @@ class CLiFFMap : public Base {
   inline double getYMax() const { return y_max_; }
   inline double getRadius() const { return radius_; }
   inline double getResolution() const { return resolution_; }
-  inline const std::vector<CLiFFMapLocation> &getLocations() const {
-    return locations_;
-  }
+  inline const std::vector<CLiFFMapLocation> &getLocations() const { return locations_; }
 };
 
 typedef std::shared_ptr<CLiFFMap> CLiFFMapPtr;
 typedef std::shared_ptr<const CLiFFMap> CLiFFMapConstPtr;
 
-} // namespace MoD
+}  // namespace MoD
 
 std::ostream &operator<<(std::ostream &, const MoD::CLiFFMap &);
 std::ostream &operator<<(std::ostream &, const MoD::CLiFFMapLocation &);

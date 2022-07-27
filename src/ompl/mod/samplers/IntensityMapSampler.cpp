@@ -1,17 +1,33 @@
+/*
+ *   Copyright (c) 2019 Chittaranjan Srinivas Swaminathan
+ *   This file is part of Maps of Dynamics library (libmod).
+ *
+ *   ompl_mod_objectives is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   ompl_mod_objectives is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with ompl_planners_ros.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <ompl/base/SpaceInformation.h>
+#include <ompl/base/spaces/SE2StateSpace.h>
+#include <ompl/mod/samplers/IntensityMapSampler.h>
+
 #include <boost/log/trivial.hpp>
 #include <boost/math/constants/constants.hpp>
-
-#include <ompl/base/spaces/SE2StateSpace.h>
-#include <ompl/base/SpaceInformation.h>
-#include <ompl/mod/samplers/IntensityMapSampler.h>
 
 namespace ompl {
 namespace MoD {
 
-IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
-                                         unsigned int maxCalls,
-                                         const ::MoD::IntensityMap &qmap,
-                                         double bias, bool debug)
+IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                                         const ::MoD::IntensityMap &qmap, double bias, bool debug)
     : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
   this->numIters_ = maxCalls;
   setup(qmap);
@@ -29,11 +45,8 @@ IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr 
   }
 }
 
-IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
-                                         unsigned int maxCalls,
-                                         const std::string &intensity_map_file_name,
-                                         double bias,
-                                         bool debug)
+IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                                         const std::string &intensity_map_file_name, double bias, bool debug)
     : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
   this->numIters_ = maxCalls;
   setup(::MoD::IntensityMap(intensity_map_file_name));
@@ -71,9 +84,7 @@ bool IntensityMapSampler::checkValidity(double xi, double yi) {
 }
 
 void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
-
   for (size_t i = 0; i < (intensity_map.getRows() * intensity_map.getColumns()); i++) {
-
     auto xy = intensity_map.getXYatIndex(i);
     if (this->checkValidity(xy[0], xy[1])) {
       q_map.emplace_back(xy[0], xy[1], 1.0 - intensity_map(xy[0], xy[1]));
@@ -86,12 +97,9 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
   std::sort(q_map.begin(), q_map.end(), [](QMap a, QMap b) { return a.getValue() < b.getValue(); });
 
   // Compute weighted sum.
-  this->value_sum =
-      (std::accumulate(q_map.begin(), q_map.end(), QMap(0.0, 0.0, 0.0),
-                       [](QMap a, QMap b) {
-                         return QMap(0.0, 0.0, a.getValue() + b.getValue());
-                       }))
-          .getValue();
+  this->value_sum = (std::accumulate(q_map.begin(), q_map.end(), QMap(0.0, 0.0, 0.0), [](QMap a, QMap b) {
+                      return QMap(0.0, 0.0, a.getValue() + b.getValue());
+                    })).getValue();
 
   // Don't forget to set the cell size...
   this->half_cell_size = intensity_map.getCellSize() / 2.0;
@@ -103,10 +111,8 @@ bool IntensityMapSampler::sampleUniform(ompl::base::State *state, const ompl::ba
 }
 
 void IntensityMapSampler::sampleNecessarilyValid(ompl::base::State *state) {
-
   // Sample theta first. This is the easiest part.
-  double theta = rng_.uniformReal(-boost::math::constants::pi<double>(),
-                                  boost::math::constants::pi<double>());
+  double theta = rng_.uniformReal(-boost::math::constants::pi<double>(), boost::math::constants::pi<double>());
 
   // Sample position next.
   auto sampled_value = rng_.uniformReal(0.0, this->value_sum);
@@ -130,10 +136,10 @@ void IntensityMapSampler::sampleNecessarilyValid(ompl::base::State *state) {
       accum_sum = accum_sum + q_map[index].getValue();
       index = index + 1;
     }
-    sampled_x = rng_.uniformReal(q_map[result_index].getX() - half_cell_size,
-                                 q_map[result_index].getX() + half_cell_size);
-    sampled_y = rng_.uniformReal(q_map[result_index].getY() - half_cell_size,
-                                 q_map[result_index].getY() + half_cell_size);
+    sampled_x =
+        rng_.uniformReal(q_map[result_index].getX() - half_cell_size, q_map[result_index].getX() + half_cell_size);
+    sampled_y =
+        rng_.uniformReal(q_map[result_index].getY() - half_cell_size, q_map[result_index].getY() + half_cell_size);
   } else {
     while (index < nonq_map.size()) {
       if (sampled_value < accum_sum) {
@@ -161,5 +167,5 @@ void IntensityMapSampler::sampleNecessarilyValid(ompl::base::State *state) {
   }
 }
 
-} // namespace MoD
-} // namespace ompl
+}  // namespace MoD
+}  // namespace ompl
