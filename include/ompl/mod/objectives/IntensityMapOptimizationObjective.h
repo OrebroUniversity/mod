@@ -18,12 +18,12 @@
 
 #pragma once
 
-#include <mod/cliffmap.hpp>
 #include <ompl/mod/objectives/MoDOptimizationObjective.h>
 
 #include <Eigen/Dense>
 #include <array>
 #include <functional>
+#include <mod/cliffmap.hpp>
 
 namespace ompl {
 namespace MoD {
@@ -33,13 +33,8 @@ class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
   ::MoD::IntensityMap intensity_map_;
 
  public:
-  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                    const std::string &file_name,
-                                    double wd,
-                                    double wq,
-                                    double wc,
-                                    std::string sampler_type,
-                                    double sampler_bias,
+  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const std::string &file_name, double wd,
+                                    double wq, double wc, std::string sampler_type, double sampler_bias,
                                     bool sampler_debug);
 
   ~IntensityMapOptimizationObjective() override = default;
@@ -50,12 +45,10 @@ class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
 
   ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 
-  ompl::base::Cost
-  motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 };
 
-typedef std::shared_ptr<IntensityMapOptimizationObjective>
-    IntensityMapOptimizationObjectivePtr;
+typedef std::shared_ptr<IntensityMapOptimizationObjective> IntensityMapOptimizationObjectivePtr;
 
-} // namespace MoD
-} // namespace ompl
+}  // namespace MoD
+}  // namespace ompl

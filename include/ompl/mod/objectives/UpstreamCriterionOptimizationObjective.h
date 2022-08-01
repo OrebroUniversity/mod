@@ -26,9 +26,7 @@
 namespace ompl {
 namespace MoD {
 
-class UpstreamCriterionOptimizationObjective
-    : public ompl::MoD::MoDOptimizationObjective {
-
+class UpstreamCriterionOptimizationObjective : public ompl::MoD::MoDOptimizationObjective {
   ::MoD::GMMTMapPtr gmmtmap;
 
   ::MoD::CLiFFMapPtr cliffmap;
@@ -43,46 +41,24 @@ class UpstreamCriterionOptimizationObjective
       const ompl::base::SpaceInformationPtr &si,
       const ::MoD::STeFMap &stefmap, float wd, float wq, float wc);
   */
-  UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si,
-      const ::MoD::GMMTMap &gmmtmap,
-      float wd,
-      float wq,
-      float wc,
-      const std::string &sampler_type,
-      const std::string &intensity_map_file_name,
-      double bias,
-      bool debug);
+  UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ::MoD::GMMTMap &gmmtmap,
+                                         float wd, float wq, float wc, const std::string &sampler_type,
+                                         const std::string &intensity_map_file_name, double bias, bool debug);
 
-  UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si,
-      const ::MoD::CLiFFMap &cliffmap,
-      const std::string &intensity_map_file_name,
-      double wd,
-      double wq,
-      double wc,
-      const std::string &sampler_type,
-      double bias,
-      bool debug);
+  UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ::MoD::CLiFFMap &cliffmap,
+                                         const std::string &intensity_map_file_name, double wd, double wq, double wc,
+                                         const std::string &sampler_type, double bias, bool debug);
 
-  UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si,
-      const ompl::MoD::MapType &map_type,
-      const std::string &map_file_name,
-      float wd,
-      float wq,
-      float wc,
-      const std::string &sampler_type,
-      const std::string &intensity_map_file_name,
-      double bias,
-      bool debug);
+  UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ompl::MoD::MapType &map_type,
+                                         const std::string &map_file_name, float wd, float wq, float wc,
+                                         const std::string &sampler_type, const std::string &intensity_map_file_name,
+                                         double bias, bool debug);
 
   inline bool isSymmetric() const override { return false; }
 
   ompl::base::Cost stateCost(const ompl::base::State *s) const override;
 
-  ompl::base::Cost motionCost(const ompl::base::State *s1,
-                              const ompl::base::State *s2) const override;
+  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 
   double getSTeFMapCost(double x, double y, double alpha) const;
 
@@ -90,15 +66,12 @@ class UpstreamCriterionOptimizationObjective
 
   double getCLiFFMapCost(double x, double y, double alpha) const;
 
-  ompl::base::Cost
-  motionCostHeuristic(const ompl::base::State *s1,
-                      const ompl::base::State *s2) const override;
+  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 
   ~UpstreamCriterionOptimizationObjective() override {}
 };
 
-typedef std::shared_ptr<UpstreamCriterionOptimizationObjective>
-    UpstreamCriterionOptimizationObjectivePtr;
+typedef std::shared_ptr<UpstreamCriterionOptimizationObjective> UpstreamCriterionOptimizationObjectivePtr;
 
-} // namespace MoD
+}  // namespace MoD
 } /* namespace ompl */

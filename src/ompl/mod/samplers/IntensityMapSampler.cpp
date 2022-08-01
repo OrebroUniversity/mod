@@ -34,7 +34,9 @@ IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr 
   setup(qmap);
 
   if (debug_) {
-    sampledPosesFile_.open("/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv", std::fstream::out);
+    sampledPosesFile_.open(
+        "/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv",
+        std::fstream::out);
     if (sampledPosesFile_.is_open()) {
       OMPL_INFORM("Debug Enabled.");
       sampledPosesFile_ << "x,y,choice" << std::endl;
@@ -53,7 +55,9 @@ IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr 
   setup(::MoD::IntensityMap(intensity_map_file_name));
 
   if (debug_) {
-    sampledPosesFile_.open("/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv", std::fstream::out);
+    sampledPosesFile_.open(
+        "/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv",
+        std::fstream::out);
     if (sampledPosesFile_.is_open()) {
       OMPL_INFORM("Debug Enabled.");
       sampledPosesFile_ << "x,y,choice" << std::endl;

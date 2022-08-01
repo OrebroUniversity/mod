@@ -38,6 +38,8 @@ class Base {
   /**
    * \brief Set the frame ID in ROS message.
    */
-  inline void setFrameID(const std::string &frame_id) { this->frame_id_ = frame_id; }
+  inline void setFrameID(const std::string &frame_id) {
+    this->frame_id_ = frame_id;
+  }
 };
 }  // namespace MoD

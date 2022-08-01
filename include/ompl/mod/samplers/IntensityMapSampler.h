@@ -1,17 +1,16 @@
 #pragma once
 
-#include <memory>
-#include <fstream>
-#include <mod/cliffmap.hpp>
-
 #include <ompl/base/samplers/InformedStateSampler.h>
 #include <ompl/util/RandomNumbers.h>
+
+#include <fstream>
+#include <memory>
+#include <mod/cliffmap.hpp>
 
 namespace ompl {
 namespace MoD {
 
 class IntensityMapSampler : public ompl::base::InformedSampler {
-
  private:
   bool checkValidity(double xi, double yi);
 
@@ -51,17 +50,11 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
   std::fstream sampledPosesFile_;
 
  public:
-  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
-                      unsigned int maxCalls,
-                      const ::MoD::IntensityMap &q_map,
-                      double bias,
-                      bool debug = false);
+  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                      const ::MoD::IntensityMap &q_map, double bias, bool debug = false);
 
-  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef,
-                      unsigned int maxCalls,
-                      const std::string &intensity_map_file_name,
-                      double bias = 0.5,
-                      bool debug = false);
+  IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                      const std::string &intensity_map_file_name, double bias = 0.5, bool debug = false);
 
   inline ~IntensityMapSampler() = default;
 
@@ -69,26 +62,25 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
 
   bool sampleUniform(ompl::base::State *state, const ompl::base::Cost &maxCost) override;
 
-  inline bool sampleUniform(ompl::base::State *state,
-                            const ompl::base::Cost &minCost,
+  inline bool sampleUniform(ompl::base::State *state, const ompl::base::Cost &minCost,
                             const ompl::base::Cost &maxCost) override {
     return sampleUniform(state, maxCost);
   }
 
   inline bool hasInformedMeasure() const override { return false; }
 
-  inline double getInformedMeasure(const ompl::base::Cost &currentCost) const override { return this->space_->getMeasure(); }
+  inline double getInformedMeasure(const ompl::base::Cost &currentCost) const override {
+    return this->space_->getMeasure();
+  }
 
   void sampleNecessarilyValid(ompl::base::State *state);
 
-  static ompl::base::InformedSamplerPtr allocate(const ompl::base::ProblemDefinitionPtr &pdef,
-                                                 unsigned int maxCalls,
-                                                 const std::string &intensity_map_file_name,
-                                                 double bias = 0.5,
+  static ompl::base::InformedSamplerPtr allocate(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                                                 const std::string &intensity_map_file_name, double bias = 0.5,
                                                  bool debug = false) {
     return std::make_shared<IntensityMapSampler>(pdef, maxCalls, intensity_map_file_name, bias, debug);
   }
 };
 
-} // namespace MoD
-} // namespace ompl
+}  // namespace MoD
+}  // namespace ompl
