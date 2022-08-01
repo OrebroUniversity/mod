@@ -16,6 +16,7 @@
  *   along with ompl_planners_ros.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <ompl/base/OptimizationObjective.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/base/goals/GoalState.h>
@@ -41,7 +42,9 @@ DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, u
   setup();
 
   if (debug_) {
-    sampledPosesFile_.open("/home/ksatyaki/samples_dijkstra.csv", std::fstream::out);
+    sampledPosesFile_.open(
+        "/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv",
+        std::fstream::out);
     if (sampledPosesFile_.is_open()) {
       OMPL_INFORM("Debug Enabled.");
       sampledPosesFile_ << "x,y,choice" << std::endl;

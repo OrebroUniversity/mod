@@ -16,6 +16,7 @@
  *   along with ompl_planners_ros.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <ompl/base/OptimizationObjective.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/mod/samplers/IntensityMapSampler.h>
@@ -33,7 +34,7 @@ IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr 
   setup(qmap);
 
   if (debug_) {
-    sampledPosesFile_.open("/home/ksatyaki/samples.csv", std::fstream::out);
+    sampledPosesFile_.open("/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv", std::fstream::out);
     if (sampledPosesFile_.is_open()) {
       OMPL_INFORM("Debug Enabled.");
       sampledPosesFile_ << "x,y,choice" << std::endl;
