@@ -43,7 +43,7 @@ DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, u
 
   if (debug_) {
     sampledPosesFile_.open(
-        "/home/ksatyaki/samples-intensity" + pdef->getOptimizationObjective()->getDescription() + ".csv",
+        "/home/ksatyaki/samples-dijkstra-" + pdef->getOptimizationObjective()->getDescription() + ".csv",
         std::fstream::out);
     if (sampledPosesFile_.is_open()) {
       OMPL_INFORM("Debug Enabled.");
