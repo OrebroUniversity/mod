@@ -30,6 +30,8 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
     double getX() const { return position[0]; }
     double getY() const { return position[1]; }
     double getValue() const { return value; }
+
+    inline ~QMap() = default;
   };
 
   std::vector<QMap> q_map;
@@ -60,6 +62,8 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
                       const std::string &intensity_map_file_name,
                       double bias = 0.5,
                       bool debug = false);
+
+  inline ~IntensityMapSampler() = default;
 
   void setup(const ::MoD::IntensityMap &intensity_map);
 

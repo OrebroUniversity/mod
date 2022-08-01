@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Release)
 
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED COMPONENTS log program_options)
 find_package(Eigen3 REQUIRED)
 find_package(ompl 1.5 REQUIRED)
 
@@ -45,6 +45,7 @@ add_library(mod SHARED
         src/ompl/mod/samplers/IntensityMapSampler.cpp
         src/ompl/mod/samplers/DijkstraSampler.cpp)
 target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
+
 
 #############
 ### GTest ###

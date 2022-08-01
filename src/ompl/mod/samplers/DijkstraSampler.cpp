@@ -23,8 +23,7 @@
 
 #include <utility>
 
-namespace ompl {
-namespace MoD {
+namespace ompl::MoD {
 DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls, double cell_size,
                                  double bias, bool debug)
     : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
@@ -319,5 +318,4 @@ bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::
   return true;
 }
 
-}  // namespace MoD
-}  // namespace ompl
+}  // namespace ompl::MoD

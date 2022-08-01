@@ -25,6 +25,7 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/log/trivial.hpp>
 #include <mod/base.hpp>
 #include <vector>
 

@@ -112,6 +112,8 @@ class DijkstraSampler : public ompl::base::InformedSampler {
     return std::make_shared<DijkstraSampler>(pdef, maxCalls, cell_size, bias, debug);
   }
 
+  inline ~DijkstraSampler() = default;
+
   inline void setStart(const std::array<double, 3> &start) { this->start_ = start; }
   inline void setGoal(const std::array<double, 3> &goal) { this->goal_ = goal; }
   inline void setCellSize(double cell_size) { this->props_.cell_size = cell_size; }
