@@ -18,23 +18,18 @@
 
 #pragma once
 
-#include <boost/log/trivial.hpp>
 #include <ompl/base/OptimizationObjective.h>
-#include <ompl/base/samplers/informed/RejectionInfSampler.h>
+#include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
-#include "ompl/mod/samplers/IntensityMapSampler.h"
+#include <boost/log/trivial.hpp>
+
 #include "ompl/mod/samplers/DijkstraSampler.h"
+#include "ompl/mod/samplers/IntensityMapSampler.h"
 
 namespace ompl {
 namespace MoD {
 
-enum class MapType {
-  CLiFFMap = 0,
-  STeFMap = 1,
-  GMMTMap = 2,
-  IntensityMap = 4,
-  NOTSET = 101
-};
+enum class MapType { CLiFFMap = 0, STeFMap = 1, GMMTMap = 2, IntensityMap = 4, NOTSET = 101 };
 
 struct Cost {
   /// The last computed distance cost
@@ -78,14 +73,9 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
 
   bool sampler_debug_{false};
 
-  inline MoDOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                  double weight_d,
-                                  double weight_q,
-                                  double weight_c,
-                                  MapType map_type,
-                                  const std::string &sampler_type = "",
-                                  const std::string &intensity_map_file_name = "",
-                                  double sampler_bias = 0.05,
+  inline MoDOptimizationObjective(const ompl::base::SpaceInformationPtr &si, double weight_d, double weight_q,
+                                  double weight_c, MapType map_type, const std::string &sampler_type = "",
+                                  const std::string &intensity_map_file_name = "", double sampler_bias = 0.05,
                                   bool sampler_debug = false)
       : ompl::base::OptimizationObjective(si),
         weight_d_(weight_d),
@@ -103,34 +93,23 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
   inline double getLastCostC() const { return last_cost_.cost_c_; }
   inline Cost getLastCost() const { return last_cost_; }
 
-  ompl::base::Cost motionCost(const ompl::base::State *s1,
-                              const ompl::base::State *s2) const override = 0;
+  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override = 0;
 
   virtual ompl::base::InformedSamplerPtr allocInformedStateSampler(const ompl::base::ProblemDefinitionPtr &probDefn,
                                                                    unsigned int maxNumberCalls) const override {
     if (this->informed_sampler_type_ == "dijkstra") {
       OMPL_INFORM("MoDOptimization Objective will use Dijkstra Sampling...");
-      return ompl::MoD::DijkstraSampler::allocate(probDefn,
-                                                  maxNumberCalls,
-                                                  0.5,
-                                                  sampler_bias_,
-                                                  sampler_debug_);
+      return ompl::MoD::DijkstraSampler::allocate(probDefn, maxNumberCalls, 0.5, sampler_bias_, sampler_debug_);
     } else if (this->informed_sampler_type_ == "intensity") {
       OMPL_INFORM("MoDOptimization Objective will use intensity-map Sampling...");
-      return ompl::MoD::IntensityMapSampler::allocate(probDefn,
-                                                      maxNumberCalls,
-                                                      intensity_map_file_name_,
-                                                      sampler_bias_,
+      return ompl::MoD::IntensityMapSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, sampler_bias_,
                                                       sampler_debug_);
     } else {
       OMPL_INFORM(
           "informed_sampler_type = %s is not available for MoDOptimizationObjective, defaulting to rejection sampling.",
           (informed_sampler_type_.empty() or informed_sampler_type_ == "iid") ? "<empty> or iid"
                                                                               : informed_sampler_type_.c_str());
-      return ompl::MoD::IntensityMapSampler::allocate(probDefn,
-                                                      maxNumberCalls,
-                                                      intensity_map_file_name_,
-                                                      0.0,
+      return ompl::MoD::IntensityMapSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, 0.0,
                                                       sampler_debug_);
     }
   }
@@ -140,11 +119,16 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
       return "RRTStar";
     else
       switch (map_type_) {
-        case MapType::STeFMap:return "STeF-map";
-        case MapType::GMMTMap:return "GMMT-map";
-        case MapType::CLiFFMap:return "CLiFF-map";
-        case MapType::IntensityMap:return "intensity-map";
-        default:return "Not set.";
+        case MapType::STeFMap:
+          return "STeF-map";
+        case MapType::GMMTMap:
+          return "GMMT-map";
+        case MapType::CLiFFMap:
+          return "CLiFF-map";
+        case MapType::IntensityMap:
+          return "intensity-map";
+        default:
+          return "Not set.";
       }
   }
   inline MapType getMapType() const { return map_type_; }
@@ -152,5 +136,5 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
 
 typedef std::shared_ptr<MoDOptimizationObjective> MoDOptimizationObjectivePtr;
 
-} // namespace MoD
-} // namespace ompl
+}  // namespace MoD
+}  // namespace ompl
