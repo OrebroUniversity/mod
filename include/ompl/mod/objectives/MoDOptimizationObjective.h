@@ -111,7 +111,7 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
     if (this->informed_sampler_type_ == "dijkstra") {
       OMPL_INFORM("MoDOptimization Objective will use Dijkstra Sampling...");
       return ompl::MoD::DijkstraSampler::allocate(
-          probDefn, maxNumberCalls, 0.5, sampler_bias_, sampler_debug_);
+          probDefn, maxNumberCalls, 0.2, sampler_bias_, sampler_debug_);
     } else if (this->informed_sampler_type_ == "intensity") {
       OMPL_INFORM(
           "MoDOptimization Objective will use intensity-map Sampling...");

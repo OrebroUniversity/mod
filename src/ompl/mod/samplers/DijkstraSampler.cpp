@@ -211,6 +211,8 @@ void DijkstraSampler::setup() {
   std::vector<int> d(boost::num_vertices(graph_));
 
   BOOST_LOG_TRIVIAL(info) << "Vertices in the graph are: " << boost::num_vertices(graph_);
+  BOOST_LOG_TRIVIAL(info) << "Total vertices would have been " << rows * cols;
+  BOOST_LOG_TRIVIAL(info) << "Rows = " << rows  << ", Cols = " << cols;
 
   // Find out where the start and goal are in terms of row, col.
   auto start_row = static_cast<size_t>((this->start_[1] - y_min) / this->props_.cell_size);
