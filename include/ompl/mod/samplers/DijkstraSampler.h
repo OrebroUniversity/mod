@@ -64,9 +64,13 @@ class DijkstraSampler : public ompl::base::InformedSampler {
   bool checkValidity(double xi, double yi, double xf, double yf);
   bool checkValidity(size_t row_i, size_t col_i, size_t row_f, size_t col_f);
 
-  inline double colToX(size_t col) { return static_cast<double>(col) * this->props_.cell_size + this->props_.x_min; }
+  inline double colToX(size_t col) const {
+    return static_cast<double>(col) * this->props_.cell_size + this->props_.x_min;
+  }
 
-  inline double rowToY(size_t row) { return static_cast<double>(row) * this->props_.cell_size + this->props_.y_min; }
+  inline double rowToY(size_t row) const {
+    return static_cast<double>(row) * this->props_.cell_size + this->props_.y_min;
+  }
 
  protected:
   props props_;

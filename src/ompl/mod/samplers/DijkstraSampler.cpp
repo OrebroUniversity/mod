@@ -142,6 +142,9 @@ void DijkstraSampler::setup() {
   size_t total_edges = (rows * cols * 8) - 20 - (3 * 2 * (cols - 2)) - (3 * 2 * (rows - 2));
 
   this->props_ = props(this->props_.cell_size, x_min, x_max, y_min, y_max, rows, cols, total_edges);
+  BOOST_LOG_TRIVIAL(info) << "Properties: " << std::endl
+                          << "Bias: " << this->bias_ << std::endl
+                          << "Cell size: " << this->props_.cell_size;
 
   for (size_t row = 0; row < rows; row++) {
     for (size_t col = 0; col < cols; col++) {
@@ -212,7 +215,7 @@ void DijkstraSampler::setup() {
 
   BOOST_LOG_TRIVIAL(info) << "Vertices in the graph are: " << boost::num_vertices(graph_);
   BOOST_LOG_TRIVIAL(info) << "Total vertices would have been " << rows * cols;
-  BOOST_LOG_TRIVIAL(info) << "Rows = " << rows  << ", Cols = " << cols;
+  BOOST_LOG_TRIVIAL(info) << "Rows = " << rows << ", Cols = " << cols;
 
   // Find out where the start and goal are in terms of row, col.
   auto start_row = static_cast<size_t>((this->start_[1] - y_min) / this->props_.cell_size);
