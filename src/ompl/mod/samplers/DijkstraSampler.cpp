@@ -31,7 +31,7 @@ DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, u
   this->props_.cell_size = cell_size;
 
   start_ = {(probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
-            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
+            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getY(),
             (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getYaw()};
 
   ompl::base::State *goal_state = probDefn_->getGoal()->as<ompl::base::GoalState>()->getState();
@@ -202,16 +202,15 @@ void DijkstraSampler::setup() {
   }
 
   if (edges_.size() != this->props_.total_edges) {
-    BOOST_LOG_TRIVIAL(error)
-        << "Surely, the number of edges has reduced due to invalid ones not being added. We added: " << edges_.size()
-        << " edges and " << weights_.size() << " weights, but would have added " << total_edges
-        << " if we considered the bad apples.";
+    BOOST_LOG_TRIVIAL(info) << "Surely, the number of edges has reduced due to invalid ones not being added. We added: "
+                            << edges_.size() << " edges and " << weights_.size() << " weights, but would have added "
+                            << total_edges << " if we considered the bad apples.";
   }
 
   SamplingGraph graph_(edges_.begin(), edges_.end(), weights_.begin(), num_nodes);
 
   std::vector<SamplingGraphVertexDescriptor> p(boost::num_vertices(graph_));
-  std::vector<int> d(boost::num_vertices(graph_));
+  std::vector<size_t> d(boost::num_vertices(graph_));
 
   BOOST_LOG_TRIVIAL(info) << "Vertices in the graph are: " << boost::num_vertices(graph_);
   BOOST_LOG_TRIVIAL(info) << "Total vertices would have been " << rows * cols;
