@@ -1,0 +1,7 @@
+name: "mod"
+type: "cmake"
+dependencies:
+ - "mrpt2-devel"
+ - "ompl-devel"
+ - "eigen3-devel"
+ - "boost-devel"
