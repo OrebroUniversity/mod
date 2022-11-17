@@ -26,6 +26,7 @@
 
 #include "ompl/mod/samplers/DijkstraSampler.h"
 #include "ompl/mod/samplers/IntensityMapSampler.h"
+#include "ompl/mod/samplers/HybridSampler.h"
 
 namespace ompl {
 namespace MoD {
@@ -115,7 +116,11 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
     } else if (this->informed_sampler_type_ == "ellipse") {
       OMPL_INFORM("MoDOptimization Objective will use ellipsoidal heuristic...");
       return std::make_shared<ompl::base::PathLengthDirectInfSampler>(probDefn, maxNumberCalls);
-    } else {
+    } else if (this->informed_sampler_type_ == "hybrid") {
+      OMPL_INFORM("MoDOptimization Objective will use the hybrid sampler. This combines Intensity, Dijkstra and Ellipse");
+      return ompl::MoD::HybridSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, dijkstra_cell_size_, sampler_bias_, sampler_bias_, sampler_debug_);
+    }
+    else {
       OMPL_INFORM(
           "informed_sampler_type = %s is not available for "
           "MoDOptimizationObjective, defaulting to rejection sampling.",
