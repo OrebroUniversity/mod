@@ -11,18 +11,6 @@ find_package(ompl 1.5 REQUIRED)
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 
-###################
-### GTest Stuff ###
-###################
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG release-1.12.1
-)
-FetchContent_MakeAvailable(googletest)
-
 ###########
 ## Build ##
 ###########
@@ -47,24 +35,6 @@ add_library(mod SHARED
         src/ompl/mod/samplers/HybridSampler.cpp)
 target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
 
-
-#############
-### GTest ###
-#############
-
-enable_testing()
-
-add_executable(
-  mod_test
-  test/mod_test.cpp
-)
-target_link_libraries(
-  mod_test
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(mod_test)
 
 #############
 ## Install ##
