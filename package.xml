@@ -15,9 +15,9 @@
   <author email="ksatyaki@gmail.com">Chittaranjan Swaminathan</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>ompl-devel</depend>
-  <depend>boost-devel</depend>
-  <depend>eigen3-devel</depend>
+  <depend>ompl-dev</depend>
+  <depend>boost-dev</depend>
+  <depend>eigen3-dev</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
