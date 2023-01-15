@@ -2,6 +2,6 @@
 Changelog for package mod
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.1 (2023-01-15)
+------------------
 * First release
