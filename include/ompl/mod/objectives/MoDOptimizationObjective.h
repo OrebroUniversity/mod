@@ -109,7 +109,7 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
 
   ompl::base::InformedSamplerPtr allocInformedStateSampler(const ompl::base::ProblemDefinitionPtr &probDefn,
                                                            unsigned int maxNumberCalls) const override {
-    if (this->informed_sampler_type_ == "dijkstra") {
+    if (this->informed_sampler_type_.find("dijkstra") != std::string::npos) {
       OMPL_INFORM("MoDOptimization Objective will use Dijkstra Sampling...");
       return ompl::MoD::DijkstraSampler::allocate(probDefn, maxNumberCalls, dijkstra_cell_size_, sampler_bias_,
                                                   sampler_debug_);
@@ -120,7 +120,7 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
     } else if (this->informed_sampler_type_ == "ellipse") {
       OMPL_INFORM("MoDOptimization Objective will use ellipsoidal heuristic...");
       return std::make_shared<ompl::base::PathLengthDirectInfSampler>(probDefn, maxNumberCalls);
-    } else if (this->informed_sampler_type_ == "hybrid") {
+    } else if (this->informed_sampler_type_.find("hybrid") != std::string::npos) {
       OMPL_INFORM(
           "MoDOptimization Objective will use the hybrid sampler. This combines Intensity, Dijkstra and Ellipse");
       return ompl::MoD::HybridSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, dijkstra_cell_size_,
