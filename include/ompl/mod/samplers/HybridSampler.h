@@ -6,22 +6,23 @@
 
 namespace ompl::MoD {
 class HybridSampler : public ompl::base::InformedSampler {
-protected:
+ protected:
   std::shared_ptr<ompl::base::InformedSampler> intensity_map_sampler_;
   std::shared_ptr<ompl::base::InformedSampler> dijkstra_sampler_;
   std::shared_ptr<ompl::base::InformedSampler> ellipse_sampler_;
 
   double intensity_bias_{0.0};
   double dijkstra_bias_{0.0};
+  bool uniform_valid_{true};
 
   ompl::RNG rng_;
 
-public:
+ public:
   HybridSampler(const ompl::base::ProblemDefinitionPtr &pdef,
                 unsigned int maxCalls = 100,
                 const std::string &intensity_map_file_name = "",
                 double cell_size = 0.5, double bias_a = 0.05,
-                double bias_b = 0.05, bool debug = false);
+                double bias_b = 0.05, bool uniform_valid = true, bool debug = false);
 
   static ompl::base::InformedSamplerPtr allocate(
       const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls = 100,

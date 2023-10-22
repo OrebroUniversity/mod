@@ -5,9 +5,9 @@ HybridSampler::HybridSampler(const ompl::base::ProblemDefinitionPtr &pdef,
                              unsigned int maxCalls,
                              const std::string &intensity_map_file_name,
                              double cell_size, double bias_a, double bias_b,
-                             bool debug)
+                             bool uniform_valid, bool debug)
     : ompl::base::InformedSampler(pdef, maxCalls), dijkstra_bias_(bias_a),
-      intensity_bias_(bias_b) {
+      intensity_bias_(bias_b), uniform_valid_(uniform_valid) {
   this->dijkstra_sampler_ = ompl::MoD::DijkstraSampler::allocate(
       pdef, maxCalls, cell_size, 1.0, debug);
   this->intensity_map_sampler_ = ompl::MoD::IntensityMapSampler::allocate(
@@ -25,9 +25,14 @@ bool HybridSampler::sampleUniform(ompl::base::State *state,
   } else if (rndm < (intensity_bias_ + dijkstra_bias_)) {
     return intensity_map_sampler_->sampleUniform(state, maxCost);
   } else {
-    std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(0.0);
-    auto result = ellipse_sampler_->sampleUniform(state, maxCost);
-    std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(intensity_bias_);
+    auto result = false;
+    if (uniform_valid_) {
+      std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(0.0);
+      result = ellipse_sampler_->sampleUniform(state, maxCost);
+      std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(intensity_bias_);
+    } else {
+      result = ellipse_sampler_->sampleUniform(state, maxCost);
+    }
     return result;
   }
 }
