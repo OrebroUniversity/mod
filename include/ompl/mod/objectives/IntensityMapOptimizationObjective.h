@@ -25,21 +25,26 @@
 #include <functional>
 #include <mod/cliffmap.hpp>
 
-namespace ompl {
-namespace MoD {
+namespace ompl::MoD {
 
 class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
  protected:
   ::MoD::IntensityMap intensity_map_;
 
  public:
-  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const std::string &file_name, double wd,
-                                    double wq, double wc, std::string sampler_type, double sampler_bias,
+  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
+                                    const std::string &file_name,
+                                    double wd,
+                                    double wq,
+                                    double wc,
+                                    std::string sampler_type,
+                                    double sampler_bias,
+                                    bool uniform_valid,
                                     bool sampler_debug);
 
   ~IntensityMapOptimizationObjective() override = default;
 
-  virtual inline bool isSymmetric() const override { return false; }
+  inline bool isSymmetric() const override { return false; }
 
   ompl::base::Cost stateCost(const ompl::base::State *s) const override;
 
@@ -50,5 +55,4 @@ class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
 
 typedef std::shared_ptr<IntensityMapOptimizationObjective> IntensityMapOptimizationObjectivePtr;
 
-}  // namespace MoD
 }  // namespace ompl

@@ -26,9 +26,9 @@ ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(const ompl::base::
                                                               double wq, double wc, double maxvs,
                                                               double mahalanobis_distance_threshold,
                                                               bool use_mixing_factor, const std::string &sampler_type,
-                                                              double bias, bool debug)
+                                                              double bias, bool uniform_valid, bool debug)
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap, sampler_type, intensity_map_file_name,
-                                          bias, debug),
+                                          bias, uniform_valid, debug),
       max_vehicle_speed(maxvs),
       cliffmap(cliffmap_file_name),
       intensitymap(intensity_map_file_name),
@@ -43,9 +43,9 @@ ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(const ompl::base::
 ompl::MoD::DTCOptimizationObjective::DTCOptimizationObjective(
     const ompl::base::SpaceInformationPtr &si, const ::MoD::CLiFFMap &cliffmap, double wd, double wq, double wc,
     double maxvs, double mahalanobis_distance_threshold, bool use_mixing_factor, const std::string &sampler_type,
-    const std::string &intensity_map_file_name, double bias, bool debug)
+    const std::string &intensity_map_file_name, double bias, bool uniform_valid, bool debug)
     : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::CLiFFMap, sampler_type, intensity_map_file_name,
-                                          bias, debug),
+                                          bias, uniform_valid, debug),
       max_vehicle_speed(maxvs),
       cliffmap(cliffmap),
       mahalanobis_distance_threshold(mahalanobis_distance_threshold),

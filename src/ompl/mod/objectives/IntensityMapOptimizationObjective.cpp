@@ -27,10 +27,23 @@ namespace ompl {
 namespace MoD {
 
 IntensityMapOptimizationObjective::IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                                                     const std::string &file_name, double wd, double wq,
-                                                                     double wc, std::string sampler_type,
-                                                                     double sampler_bias, bool sampler_debug)
-    : ompl::MoD::MoDOptimizationObjective(si, wd, wq, wc, MapType::IntensityMap, sampler_type, file_name, sampler_bias,
+                                                                     const std::string &file_name,
+                                                                     double wd,
+                                                                     double wq,
+                                                                     double wc,
+                                                                     std::string sampler_type,
+                                                                     double sampler_bias,
+                                                                     bool uniform_valid,
+                                                                     bool sampler_debug)
+    : ompl::MoD::MoDOptimizationObjective(si,
+                                          wd,
+                                          wq,
+                                          wc,
+                                          MapType::IntensityMap,
+                                          sampler_type,
+                                          file_name,
+                                          sampler_bias,
+                                          uniform_valid,
                                           sampler_debug) {
   this->intensity_map_ = ::MoD::IntensityMap(file_name);
   description_ = "Intensity Cost";
