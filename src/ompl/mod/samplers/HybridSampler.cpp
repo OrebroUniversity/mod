@@ -25,7 +25,10 @@ bool HybridSampler::sampleUniform(ompl::base::State *state,
   } else if (rndm < (intensity_bias_ + dijkstra_bias_)) {
     return intensity_map_sampler_->sampleUniform(state, maxCost);
   } else {
-    return ellipse_sampler_->sampleUniform(state, maxCost);
+    std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(0.0);
+    auto result = ellipse_sampler_->sampleUniform(state, maxCost);
+    std::dynamic_pointer_cast<IntensityMapSampler>(intensity_map_sampler_)->setBias(intensity_bias_);
+    return result;
   }
 }
 } // namespace ompl::MoD

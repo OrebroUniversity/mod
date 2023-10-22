@@ -56,6 +56,8 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
   IntensityMapSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
                       const std::string &intensity_map_file_name, double bias = 0.5, bool debug = false);
 
+  void setBias(double bias) { bias_ = bias; }
+
   inline ~IntensityMapSampler() = default;
 
   void setup(const ::MoD::IntensityMap &intensity_map);
