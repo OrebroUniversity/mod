@@ -58,7 +58,7 @@ class IntensityMapSampler : public ompl::base::InformedSampler {
 
   void setBias(double bias) { bias_ = bias; }
 
-  inline ~IntensityMapSampler() = default;
+  inline ~IntensityMapSampler() override = default;
 
   void setup(const ::MoD::IntensityMap &intensity_map);
 

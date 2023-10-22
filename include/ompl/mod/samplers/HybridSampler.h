@@ -27,10 +27,15 @@ class HybridSampler : public ompl::base::InformedSampler {
   static ompl::base::InformedSamplerPtr allocate(
       const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls = 100,
       const std::string &intensity_map_file_name = "", double cell_size = 0.5,
-      double bias_a = 0.05, double bias_b = 0.05, bool debug = false) {
-    return std::make_shared<HybridSampler>(pdef, maxCalls,
-                                           intensity_map_file_name, cell_size,
-                                           bias_a, bias_b, debug);
+      double bias_a = 0.05, double bias_b = 0.05, bool uniform_valid = false, bool debug = false) {
+    return std::make_shared<HybridSampler>(pdef,
+                                           maxCalls,
+                                           intensity_map_file_name,
+                                           cell_size,
+                                           bias_a,
+                                           bias_b,
+                                           uniform_valid,
+                                           debug);
   }
 
   bool sampleUniform(ompl::base::State *state,

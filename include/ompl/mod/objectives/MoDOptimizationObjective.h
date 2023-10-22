@@ -124,7 +124,7 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
       OMPL_INFORM(
           "MoDOptimization Objective will use the hybrid sampler. This combines Intensity, Dijkstra and Ellipse");
       return ompl::MoD::HybridSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, dijkstra_cell_size_,
-                                                sampler_bias_, 0.01, sampler_debug_);
+                                                sampler_bias_, 0.01, uniform_valid_, sampler_debug_);
     } else {
       OMPL_INFORM(
           "informed_sampler_type = %s is not available for "
