@@ -52,6 +52,7 @@ IntensityMapSampler::IntensityMapSampler(const ompl::base::ProblemDefinitionPtr 
                                          const std::string &intensity_map_file_name, double bias, bool debug)
     : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
   this->numIters_ = maxCalls;
+  OMPL_INFORM("Trying to open file %s", intensity_map_file_name.c_str());
   setup(::MoD::IntensityMap(intensity_map_file_name));
 
   if (debug_) {
@@ -103,8 +104,8 @@ void IntensityMapSampler::setup(const ::MoD::IntensityMap &intensity_map) {
 
   // Compute weighted sum.
   this->value_sum = (std::accumulate(q_map.begin(), q_map.end(), QMap(0.0, 0.0, 0.0), [](QMap a, QMap b) {
-                      return QMap(0.0, 0.0, a.getValue() + b.getValue());
-                    })).getValue();
+    return QMap(0.0, 0.0, a.getValue() + b.getValue());
+  })).getValue();
 
   // Don't forget to set the cell size...
   this->half_cell_size = intensity_map.getCellSize() / 2.0;

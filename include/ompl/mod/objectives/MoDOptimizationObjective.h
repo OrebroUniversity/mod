@@ -80,8 +80,8 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
   double dijkstra_cell_size_{0.1};
 
   inline MoDOptimizationObjective(const ompl::base::SpaceInformationPtr &si, double weight_d, double weight_q,
-                                  double weight_c, MapType map_type, std::string sampler_type = "",
-                                  std::string intensity_map_file_name = "", double sampler_bias = 0.05,
+                                  double weight_c, MapType map_type, const std::string &sampler_type = "",
+                                  const std::string &intensity_map_file_name = "", double sampler_bias = 0.05,
                                   bool uniform_valid = false, bool sampler_debug = false)
       : ompl::base::OptimizationObjective(si),
         weight_d_(weight_d),
@@ -92,8 +92,9 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
         sampler_debug_(sampler_debug),
         uniform_valid_(uniform_valid),
         dijkstra_cell_size_(0.25) {
-    std::move(sampler_type.begin(), sampler_type.end(), informed_sampler_type_.begin());
-    std::move(intensity_map_file_name.begin(), intensity_map_file_name.end(), intensity_map_file_name_.begin());
+    informed_sampler_type_ = sampler_type;
+    this->intensity_map_file_name_ = intensity_map_file_name;
+
   }
 
  public:
@@ -109,6 +110,7 @@ class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
 
   ompl::base::InformedSamplerPtr allocInformedStateSampler(const ompl::base::ProblemDefinitionPtr &probDefn,
                                                            unsigned int maxNumberCalls) const override {
+    OMPL_INFORM("MoDOptimization Objective will use %s for Informed Sampling...", this->informed_sampler_type_.c_str());
     if (this->informed_sampler_type_.find("dijkstra") != std::string::npos) {
       OMPL_INFORM("MoDOptimization Objective will use Dijkstra Sampling...");
       return ompl::MoD::DijkstraSampler::allocate(probDefn, maxNumberCalls, dijkstra_cell_size_, sampler_bias_,
