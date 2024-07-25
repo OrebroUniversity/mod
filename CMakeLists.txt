@@ -1,13 +1,17 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(mod VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Release)
 
 find_package(Boost REQUIRED COMPONENTS log program_options)
 find_package(Eigen3 REQUIRED)
-find_package(ompl 1.5 REQUIRED)
+find_package(ompl REQUIRED)
+
+
+MESSAGE(STATUS "mod Library: OMPL_INCLUDE_DIR is ${OMPL_INCLUDE_DIR}")
+MESSAGE(STATUS "mod Library: OMPL_LIBRARIES ${OMPL_LIBRARIES}")
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 
@@ -32,7 +36,7 @@ add_library(mod SHARED
         src/ompl/mod/samplers/IntensityMapSampler.cpp
         src/ompl/mod/samplers/DijkstraSampler.cpp
         src/ompl/mod/samplers/HybridSampler.cpp)
-target_link_libraries(mod ${Boost_LIBRARIES} ${ompl_LIBRARIES})
+target_link_libraries(mod ${Boost_LIBRARIES} ${OMPL_LIBRARIES})
 
 
 #############
