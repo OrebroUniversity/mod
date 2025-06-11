@@ -23,7 +23,7 @@ include_directories(
         include
         ${EIGEN3_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
-        ${OMPL_INCLUDE_DIR}
+        ${OMPL_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
