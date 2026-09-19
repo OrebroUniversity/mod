@@ -1,5 +1,5 @@
 {
-  "log_dir": "../../../runs/atc_smoke",
+  "log_dir": "../../runs/atc_smoke",
   "threads": 4,
   "repeats": 2,
   "seed0": 1,

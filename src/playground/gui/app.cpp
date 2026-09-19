@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <mod/log.hpp>
 
@@ -36,6 +37,7 @@
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
+namespace fs = std::filesystem;
 
 namespace MoD::playground::gui {
 
@@ -87,7 +89,9 @@ App::App(Options options) : options_(std::move(options)), log_dir_(options_.log_
       status_ = "loaded " + options_.config_file;
     }
   }
+  scanMapsDir();
   if (!options_.map_yaml.empty()) config_.scenario.map_yaml = options_.map_yaml;
+  resolveConfigPaths(config_);
   if (!config_.scenario.map_yaml.empty()) loadMap(config_.scenario.map_yaml);
   if (options_.solve_on_start) startSolve();
   if (!options_.screenshot.empty() && !options_.solve_on_start) screenshot_pending_ = true;
@@ -100,9 +104,105 @@ App::~App() {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Map files under the maps dir
+
+void App::scanMapsDir() {
+  for (auto &list : map_files_) list.clear();
+  map_file_count_ = 0;
+  const fs::path root(options_.maps_dir);
+  std::error_code ec;
+  if (options_.maps_dir.empty() || !fs::is_directory(root, ec)) return;
+  for (const auto &entry : fs::recursive_directory_iterator(root, fs::directory_options::skip_permission_denied, ec)) {
+    if (!entry.is_regular_file(ec)) continue;
+    const fs::path &p = entry.path();
+    const std::string ext = p.extension().string();
+    FileKind kind;
+    if (ext == ".yaml" || ext == ".yml") {
+      kind = FileKind::occupancy;
+    } else if (ext == ".xml") {
+      // Sniff the head: GMMT has <M>/<clusters>, intensity <cell_size>, CLiFF <map version=...>.
+      std::ifstream in(p);
+      std::string head(512, '\0');
+      in.read(head.data(), static_cast<std::streamsize>(head.size()));
+      head.resize(static_cast<size_t>(std::max<std::streamsize>(0, in.gcount())));
+      if (head.find("<clusters>") != std::string::npos || head.find("<M>") != std::string::npos)
+        kind = FileKind::gmmt;
+      else if (head.find("<cell_size>") != std::string::npos)
+        kind = FileKind::intensity;
+      else if (head.find("<map version") != std::string::npos)
+        kind = FileKind::cliff;
+      else
+        continue;
+    } else {
+      continue;
+    }
+    map_files_[static_cast<size_t>(kind)].push_back({p.lexically_relative(root).generic_string(), p.string()});
+    ++map_file_count_;
+  }
+  for (auto &list : map_files_)
+    std::sort(list.begin(), list.end(), [](const MapFile &a, const MapFile &b) { return a.rel < b.rel; });
+  MOD_LOG("GUI: %zu map files under %s (%zu yaml, %zu cliff, %zu gmmt, %zu intensity)", map_file_count_,
+          options_.maps_dir.c_str(), map_files_[0].size(), map_files_[1].size(), map_files_[2].size(),
+          map_files_[3].size());
+}
+
+std::string App::resolvePath(const std::string &path) const {
+  if (path.empty() || options_.maps_dir.empty()) return path;
+  std::error_code ec;
+  if (fs::exists(path, ec)) return path;
+  const fs::path p(path);
+  if (p.is_absolute()) return path;
+  const fs::path under = fs::path(options_.maps_dir) / p;
+  if (fs::exists(under, ec)) return under.lexically_normal().string();
+  const std::string name = p.filename().string();
+  for (const auto &list : map_files_)
+    for (const auto &f : list)
+      if (fs::path(f.abs).filename().string() == name) return f.abs;
+  return path;
+}
+
+void App::resolveConfigPaths(::MoD::RunConfig &config) const {
+  config.scenario.map_yaml = resolvePath(config.scenario.map_yaml);
+  config.objective.cliff_map_file = resolvePath(config.objective.cliff_map_file);
+  config.objective.gmmt_map_file = resolvePath(config.objective.gmmt_map_file);
+  config.objective.intensity_map_file = resolvePath(config.objective.intensity_map_file);
+  config.sampler.intensity_map_file = resolvePath(config.sampler.intensity_map_file);
+}
+
+bool App::fileField(const char *label, std::string &value, FileKind kind) {
+  const std::string id = std::string("##") + label;
+  bool changed = false;
+  ImGui::SetNextItemWidth(-170.f);
+  if (ImGui::InputText(id.c_str(), &value, ImGuiInputTextFlags_EnterReturnsTrue)) changed = true;
+  ImGui::SameLine();
+  const std::string popup = id + "_picker";
+  if (ImGui::Button((std::string("v") + id).c_str())) ImGui::OpenPopup(popup.c_str());
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("pick from %s", options_.maps_dir.c_str());
+  if (ImGui::BeginPopup(popup.c_str())) {
+    const auto &files = map_files_[static_cast<size_t>(kind)];
+    if (files.empty()) ImGui::TextDisabled("no files found under %s", options_.maps_dir.c_str());
+    for (const auto &f : files) {
+      if (ImGui::Selectable(f.rel.c_str(), f.abs == value)) {
+        value = f.abs;
+        changed = true;
+      }
+    }
+    if (ImGui::Selectable("(clear)", false)) {
+      value.clear();
+      changed = true;
+    }
+    ImGui::EndPopup();
+  }
+  ImGui::SameLine();
+  ImGui::TextUnformatted(label);
+  return changed;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Loading
 
-void App::loadMap(const std::string &yaml) {
+void App::loadMap(const std::string &yaml_in) {
+  const std::string yaml = resolvePath(yaml_in);
   try {
     occupancy_ = maps_.occupancy(yaml);
     config_.scenario.map_yaml = yaml;
@@ -152,7 +252,7 @@ void App::uploadTexture() {
 }
 
 void App::loadCliffOverlay() {
-  const std::string &file = config_.objective.cliff_map_file;
+  const std::string file = resolvePath(config_.objective.cliff_map_file);
   if (file.empty() || file == cliff_loaded_) return;
   try {
     auto map = maps_.cliff(file);
@@ -174,7 +274,7 @@ void App::loadCliffOverlay() {
 }
 
 void App::loadGmmtOverlay() {
-  const std::string &file = config_.objective.gmmt_map_file;
+  const std::string file = resolvePath(config_.objective.gmmt_map_file);
   if (file.empty() || file == gmmt_loaded_) return;
   try {
     auto map = maps_.gmmt(file);
@@ -197,6 +297,7 @@ void App::loadGmmtOverlay() {
 void App::loadIntensityOverlay() {
   std::string file = config_.objective.intensity_map_file;
   if (file.empty()) file = config_.sampler.intensity_map_file;
+  file = resolvePath(file);
   if (file.empty() || file == intensity_loaded_) return;
   try {
     auto map = maps_.intensity(file);
@@ -237,6 +338,7 @@ void App::startSolve() {
   }
   solving_ = true;
   status_ = "solving...";
+  resolveConfigPaths(config_);  // config.json records the resolved paths
   ::MoD::RunConfig config = config_;
   const std::string log_dir = log_dir_;
   worker_ = std::thread([this, config, log_dir]() mutable {
@@ -346,9 +448,12 @@ void App::drawPanel(float height) {
   ImGui::PushItemWidth(-140.f);
 
   if (ImGui::CollapsingHeader("Map & scenario", ImGuiTreeNodeFlags_DefaultOpen)) {
-    ImGui::InputText("map yaml", &config_.scenario.map_yaml);
-    ImGui::SameLine();
+    if (fileField("map yaml", config_.scenario.map_yaml, FileKind::occupancy)) loadMap(config_.scenario.map_yaml);
     if (ImGui::Button("Load")) loadMap(config_.scenario.map_yaml);
+    ImGui::SameLine();
+    if (ImGui::Button("Rescan maps")) scanMapsDir();
+    ImGui::SameLine();
+    ImGui::TextDisabled("%zu files under maps dir", map_file_count_);
     ImGui::InputText("scenario name", &config_.scenario.name);
     ImGui::InputDouble("start x", &config_.scenario.start[0], 0, 0, "%.3f");
     ImGui::InputDouble("start y", &config_.scenario.start[1], 0, 0, "%.3f");
@@ -417,9 +522,18 @@ void App::drawPanel(float height) {
     ImGui::InputDouble("w_d", &config_.objective.w_d, 0.1, 1.0, "%.3f");
     ImGui::InputDouble("w_q", &config_.objective.w_q, 0.1, 1.0, "%.3f");
     ImGui::InputDouble("w_c", &config_.objective.w_c, 0.01, 0.1, "%.3f");
-    ImGui::InputText("cliff map", &config_.objective.cliff_map_file);
-    ImGui::InputText("gmmt map", &config_.objective.gmmt_map_file);
-    ImGui::InputText("intensity map", &config_.objective.intensity_map_file);
+    if (fileField("cliff map", config_.objective.cliff_map_file, FileKind::cliff)) {
+      cliff_loaded_.clear();
+      if (show_cliff_) loadCliffOverlay();
+    }
+    if (fileField("gmmt map", config_.objective.gmmt_map_file, FileKind::gmmt)) {
+      gmmt_loaded_.clear();
+      if (show_gmmt_) loadGmmtOverlay();
+    }
+    if (fileField("intensity map", config_.objective.intensity_map_file, FileKind::intensity)) {
+      intensity_loaded_.clear();
+      if (show_intensity_) loadIntensityOverlay();
+    }
     if (config_.objective.type == ::MoD::ObjectiveType::dtc) {
       ImGui::InputDouble("max speed", &config_.objective.max_vehicle_speed, 0.1, 1.0, "%.2f");
       ImGui::InputDouble("mahalanobis thr.", &config_.objective.mahalanobis_threshold, 1.0, 5.0, "%.1f");
@@ -435,7 +549,10 @@ void App::drawPanel(float height) {
     ImGui::InputDouble("dijkstra cell [m]", &config_.sampler.dijkstra_cell_size, 0.1, 0.5, "%.2f");
     if (config_.sampler.type == ::MoD::SamplerType::hybrid)
       ImGui::InputDouble("intensity bias", &config_.sampler.hybrid_intensity_bias, 0.01, 0.05, "%.3f");
-    ImGui::InputText("sampler q map", &config_.sampler.intensity_map_file);
+    if (fileField("sampler q map", config_.sampler.intensity_map_file, FileKind::intensity)) {
+      intensity_loaded_.clear();
+      if (show_intensity_) loadIntensityOverlay();
+    }
     ImGui::Checkbox("log samples", &config_.sampler.log_samples);
   }
 

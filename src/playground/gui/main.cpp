@@ -17,8 +17,8 @@
  *   <https://www.gnu.org/licenses/>.
  */
 
-/// mod playground GUI: `mod_playground_gui [--config run.json] [--map map.yaml] [--log-dir DIR] [--solve]
-/// [--exit-after-solve] [--screenshot out.ppm]`.
+/// mod playground GUI: `mod_playground_gui [--config run.json] [--map map.yaml] [--log-dir DIR] [--maps-dir DIR]
+/// [--solve] [--exit-after-solve] [--screenshot out.ppm]`. `--maps-dir` defaults to the source tree's `maps/`.
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -49,6 +49,7 @@ void writePpm(const std::string &file, int w, int h) {
 
 int main(int argc, char **argv) {
   MoD::playground::gui::Options options;
+  options.maps_dir = MOD_MAPS_DIR;
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i];
     auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : ""; };
@@ -58,6 +59,8 @@ int main(int argc, char **argv) {
       options.map_yaml = next();
     else if (a == "--log-dir")
       options.log_dir = next();
+    else if (a == "--maps-dir")
+      options.maps_dir = next();
     else if (a == "--solve")
       options.solve_on_start = true;
     else if (a == "--exit-after-solve")
@@ -66,8 +69,8 @@ int main(int argc, char **argv) {
       options.screenshot = next();
     else {
       std::fprintf(stderr,
-                   "usage: %s [--config run.json] [--map map.yaml] [--log-dir DIR] [--solve] [--exit-after-solve] "
-                   "[--screenshot out.ppm]\n",
+                   "usage: %s [--config run.json] [--map map.yaml] [--log-dir DIR] [--maps-dir DIR] [--solve] "
+                   "[--exit-after-solve] [--screenshot out.ppm]\n",
                    argv[0]);
       return 2;
     }

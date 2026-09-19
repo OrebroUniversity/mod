@@ -1,0 +1,23 @@
+{
+  "log_dir": "../../runs/office_smoke",
+  "threads": 4,
+  "repeats": 1,
+  "seed0": 1,
+  "vehicle": {"shape": "rectangle", "length": 0.7, "width": 0.4, "state_space": "dubins", "turning_radius": 1.0},
+  "scenarios": [
+    {"name": "office_cubicles1a", "map_yaml": "office_cubicles.yaml", "start": [-5.0, -5.0, 0.78539816339], "goal": [19.0, 19.0, 0.78539816339]},
+    {"name": "office_cubicles2a", "map_yaml": "office_cubicles.yaml", "start": [-5.0, 19.0, 0.78539816339], "goal": [19.0, -5.0, 0.78539816339]},
+    {"name": "office_cubicles3a", "map_yaml": "office_cubicles.yaml", "start": [19.0, 19.0, 0.78539816339], "goal": [-5.0, -5.0, 0.78539816339]},
+    {"name": "office_cubicles4a", "map_yaml": "office_cubicles.yaml", "start": [19.0, -5.0, 0.78539816339], "goal": [-5.0, 19.0, 0.78539816339]}
+  ],
+  "planners": [
+    {"type": "hybrid_astar", "max_planning_time": 5.0},
+    {"type": "rrt_star", "max_planning_time": 5.0}
+  ],
+  "samplers": [
+    {"type": "dijkstra", "bias": 0.05, "dijkstra_cell_size": 0.5, "intensity_map_file": "office_cubicles_intensitymap.xml"}
+  ],
+  "objectives": [
+    {"type": "cliff", "w_c": 0.1, "cliff_map_file": "office_cubicles_cliffmap.xml", "intensity_map_file": "office_cubicles_intensitymap.xml"}
+  ]
+}

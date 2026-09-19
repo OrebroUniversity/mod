@@ -1,8 +1,8 @@
-# Unit tests for mod. Data files live in test/data; MOD_TEST_DATA_DIR points at it.
+# Unit tests for mod. Map data lives in maps/<env>; MOD_TEST_DATA_DIR points at maps/.
 include(GoogleTest)
 
 add_library(mod_test_common INTERFACE)
-target_compile_definitions(mod_test_common INTERFACE MOD_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_definitions(mod_test_common INTERFACE MOD_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/maps")
 target_link_libraries(mod_test_common INTERFACE mod::mod GTest::gtest GTest::gtest_main)
 target_compile_options(mod_test_common INTERFACE -Wall -Wextra)
 

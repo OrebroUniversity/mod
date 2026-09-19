@@ -30,7 +30,7 @@
   the goal test ignores the direction bit.
 - OMPL's SO(2) bounds are `[-pi, pi)`: the planner normalises yaws into that range; a scenario yaw of exactly `pi`
   must be given as `-pi`.
-- Batch: `BatchSpec` has one `hybrid_astar` scope copied into every run (`test/data/atc/batch_atc_hybrid.json`).
+- Batch: `BatchSpec` has one `hybrid_astar` scope copied into every run (`maps/atc/batch_atc_hybrid.json`).
 
 ## Agent protocol
 Same as PLAN.md: first unchecked milestone, only that milestone, tests green, one commit `HA<n>: …`, tick and commit `HA<n>: done`, stop.

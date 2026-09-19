@@ -1,5 +1,5 @@
 {
-  "log_dir": "../../../runs/atc_hybrid",
+  "log_dir": "../../runs/atc_hybrid",
   "threads": 20,
   "repeats": 10,
   "seed0": 1,

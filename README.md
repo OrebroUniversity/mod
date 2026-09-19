@@ -29,10 +29,14 @@ tests in `build/bin/tests`. `-DMOD_BUILD_PLAYGROUND=OFF` builds the library alon
 - Hybrid A*: `MoD::HybridAStar(si, objective, HybridAStarParameters, turning_radius).solve(start, goal, budget_s)`
   returns an `ompl::geometric::PathGeometric`; in the playground it is the planner type `hybrid_astar`
   (`HybridAStarParameters` scope in `config.json`; reverse motion under Reeds-Shepp).
-- Batch: `./build/bin/run_batch test/data/atc/batch_atc_smoke.json --threads 4 --log-dir runs/atc`; one folder per run
-  with `config.json`, `solution.json`, optional `samples.json`. `test/data/atc/batch_atc_hybrid.json` is the
+- Batch: `./build/bin/run_batch maps/atc/batch_atc_smoke.json --threads 4 --log-dir runs/atc`; one folder per run
+  with `config.json`, `solution.json`, optional `samples.json`. `maps/atc/batch_atc_hybrid.json` is the
   Hybrid A* / RRT* / AIT* comparison over the six ATC scenarios and four objectives.
-- GUI: `./build/bin/mod_playground_gui --map test/data/atc/atc.yaml`.
+- GUI: `./build/bin/mod_playground_gui --map maps/atc/atc.yaml`. The file fields have pickers listing the yaml /
+  CLiFF / GMMT / intensity files found under `maps/` (compiled-in source path; `--maps-dir DIR` overrides), and a
+  bare file name such as `atc_cliff.xml`, typed or read from a config, resolves against that folder.
+- Maps: `maps/<env>/` holds the occupancy map, the MoD maps and the scenario / batch JSONs of each environment
+  (`atc`, `warehouse`, `office_cubicles`; see `maps/README.md`).
 - Plots: see `analysis/README.md`.
 
 ## Acknowledgements
@@ -42,8 +46,8 @@ The experiment pipeline in `src/playground` and `analysis` is inspired by, and p
 [ksatyaki/bench-mr](https://github.com/ksatyaki/bench-mr), which ran the published experiments. No bench-mr source is
 included, but the following are derived from it and are marked as such in the files:
 
-- the ATC maps and the six start/goal pairs under `test/data/atc` (copied from bench-mr `maps/` and
-  `python/sg-pairs-atc.yaml`); the occupancy map itself comes from the ATC pedestrian dataset (Brščić et al., 2013);
+- the ATC, warehouse and office maps and the start/goal pairs under `maps/` (copied from bench-mr `maps/`,
+  `python/sg-pairs-atc.yaml` and `python/sgs/sg-pairs-pedsim.yaml`); the occupancy map itself comes from the ATC pedestrian dataset (Brščić et al., 2013);
 - the objective-per-type wiring and the Paper IV parameter defaults (`src/playground/core/planner_factory.cpp`,
   `include/mod/parameters.hpp`), from bench-mr `src/base/src/PlannerSettings.cpp`;
 - timing solutions through OMPL's intermediate-solution callback (`src/playground/core/solver.cpp`), from bench-mr

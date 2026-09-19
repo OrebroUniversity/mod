@@ -83,6 +83,7 @@ struct Options {
   std::string config_file;
   std::string map_yaml;
   std::string log_dir{"runs"};
+  std::string maps_dir;  ///< folder scanned for map files; bare file names resolve against it
   bool solve_on_start{false};
   bool exit_after_solve{false};
   std::string screenshot;  ///< PPM written after the solve (or first frame if not solving)
@@ -110,6 +111,15 @@ class App {
   Camera camera_;
   bool camera_fitted_{false};
   std::string status_;
+
+  // map files found under options_.maps_dir, per kind
+  enum class FileKind { occupancy = 0, cliff = 1, gmmt = 2, intensity = 3 };
+  struct MapFile {
+    std::string rel;  ///< path relative to the maps dir (shown in the picker)
+    std::string abs;
+  };
+  std::array<std::vector<MapFile>, 4> map_files_;
+  size_t map_file_count_{0};
 
   // overlays
   bool show_cliff_{false}, show_gmmt_{false}, show_intensity_{false}, show_tree_{true}, show_path_{true},
@@ -142,6 +152,14 @@ class App {
   bool quit_{false};
 
   // --- steps ---
+  /// Lists the yaml / xml files under the maps dir (xml kind sniffed from the content).
+  void scanMapsDir();
+  /// A path as given, or resolved against the maps dir (`<maps>/<path>`, then by file name) when it does not exist.
+  std::string resolvePath(const std::string &path) const;
+  void resolveConfigPaths(::MoD::RunConfig &config) const;
+  /// InputText with a picker button listing the map files of `kind`; true when the value changed.
+  bool fileField(const char *label, std::string &value, FileKind kind);
+
   void loadMap(const std::string &yaml);
   void uploadTexture();
   void loadCliffOverlay();

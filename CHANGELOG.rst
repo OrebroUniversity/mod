@@ -36,6 +36,15 @@ Library
   ``hybrid_astar`` in ``PlannerParameters``. Version 2.1.0.
 * Design after Nav2's SmacPlannerHybrid description (Apache-2.0); no Nav2 code (``3rd_party_licenses.md``).
 
+Maps
+~~~~
+* Map data moved from ``test/data/atc`` to ``maps/atc``; ``maps/warehouse`` (``pedsim_warehouse``) and
+  ``maps/office_cubicles`` (with the four bench-mr start/goal pairs in ``scenarios_office_cubicles.json`` and
+  ``batch_office_smoke.json``) copied from the bench-mr fork's ``maps/``. ``MOD_TEST_DATA_DIR`` points at ``maps/``.
+* GUI: the file fields get pickers over the yaml / CLiFF / GMMT / intensity files found under ``maps/``
+  (classified by content; compiled-in source path, ``--maps-dir DIR`` overrides, "rescan" button), and a bare
+  file name typed or read from a config resolves against that folder (``config.json`` records the resolved path).
+
 Playground
 ~~~~~~~~~~
 * ``PlannerFactory`` builds ``HybridAStar`` from the same ``SpaceInformation`` and objective (``PlannerSetup::
@@ -51,7 +60,7 @@ Playground
   0.01 s budget, invalid / unreachable goal, dead end needing exactly one cusp, identical open-map path with and
   without reverse, zero penalty preferring a cheaper cusp path on a T map.
 
-ATC comparison (``test/data/atc/batch_atc_hybrid.json``)
+ATC comparison (``maps/atc/batch_atc_hybrid.json``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Six scenarios x {hybrid_astar, rrt_star, ait_star} x dijkstra sampler (bias 0.05, cell 0.5 m) x four objectives x
 10 repeats, Dubins r = 1 m, 30 s budget each, 20 runs in parallel on 24 cores (Hybrid A* is deterministic; its
@@ -157,7 +166,7 @@ With the inferred steps (pixel 0.05 m, cost step 0.05 m):
 
 Test data
 ~~~~~~~~~
-``test/data/atc``: ATC occupancy map, CLiFF / GMMT / intensity maps and the six Paper IV start-goal pairs
+``maps/atc``: ATC occupancy map, CLiFF / GMMT / intensity maps and the six Paper IV start-goal pairs
 (``scenarios_atc.json``), copied from bench-mr.
 
 0.0.1 (2023-01-15)

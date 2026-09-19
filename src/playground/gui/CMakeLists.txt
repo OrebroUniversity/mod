@@ -22,4 +22,5 @@ target_compile_options(mod_imgui PRIVATE -w)
 
 add_executable(mod_playground_gui main.cpp app.cpp)
 target_link_libraries(mod_playground_gui PRIVATE mod::playground mod_imgui Threads::Threads)
+target_compile_definitions(mod_playground_gui PRIVATE MOD_MAPS_DIR="${CMAKE_SOURCE_DIR}/maps")
 target_compile_options(mod_playground_gui PRIVATE -Wall -Wextra)
