@@ -8,7 +8,7 @@ draw planner samples where people actually walk, a Hybrid A* planner that optimi
 **playground** for running and comparing all of this on real maps, with logs and plots.
 
 If you just want to see it work, go to [Quick start](#quick-start). If you want the theory, read
-[docs/concepts.md](docs/concepts.md).
+[docs/concepts.md](docs/concepts.md) and the papers under [Background reading](#background-reading).
 
 ![Hybrid A* on the ATC map in the playground](docs/img/gui-atc-hybrid.png)
 
@@ -116,12 +116,41 @@ deterministic answer is directly comparable with the sampling planners. Details,
 | [analysis/README.md](analysis/README.md) | The Python scripts |
 | [docs/development.md](docs/development.md) | Code layout, tests, style, plans, how to add an objective / sampler / planner |
 | [CHANGELOG.rst](CHANGELOG.rst) | What changed per version, including the ATC comparison results |
+| [Background reading](#background-reading) | The papers behind the objectives, samplers and maps |
 
 ## Results at a glance
 
 On the six ATC scenarios with the four MoD objectives (30 s budget, 10 repeats), Hybrid A* solved every run in
 under a second with a cost equal to or lower than RRT*'s and AIT*'s best after 30 s. The full table is in
 [CHANGELOG.rst](CHANGELOG.rst), and the batch that produced it is `maps/atc/batch_atc_hybrid.json`.
+
+## Background reading
+
+The objectives and samplers in `mod` are the ones proposed and evaluated in these papers (Papers I, III and IV
+of the author's thesis); the maps come from the referenced representations.
+
+- **Down-The-CLiFF objective and intensity-map sampling.** C. S. Swaminathan, T. P. Kucner, M. Magnusson,
+  L. Palmieri, A. J. Lilienthal, *Down the CLiFF: Flow-Aware Trajectory Planning under Motion Pattern
+  Uncertainty*, IEEE/RSJ IROS 2018.
+- **Benchmarking the objectives (upstream criterion on CLiFF and GMMT maps, DTC, intensity) with simulated
+  pedestrians.** C. S. Swaminathan, T. P. Kucner, M. Magnusson, L. Palmieri, S. Molina, A. Mannucci, F. Pecora,
+  A. J. Lilienthal, *Benchmarking the Utility of Maps of Dynamics for Human-Aware Motion Planning*, Frontiers in
+  Robotics and AI 9, 916153, 2022.
+- **The samplers (Dijkstra, intensity, hybrid) and the ATC experiments this playground reproduces.**
+  C. S. Swaminathan, T. P. Kucner, A. J. Lilienthal, M. Magnusson, *Sampling Functions for Global Motion Planning
+  Using Maps of Dynamics for Mobile Robots*, Robotics and Autonomous Systems 194, 105117, 2025,
+  [doi:10.1016/j.robot.2025.105117](https://doi.org/10.1016/j.robot.2025.105117).
+- **CLiFF-map.** T. P. Kucner, M. Magnusson, E. Schaffernicht, V. Hernandez Bennetts, A. J. Lilienthal, *Enabling
+  Flow Awareness for Mobile Robots in Partially Observable Environments*, IEEE RA-L 2(2), 2017.
+- **GMMT-map.** M. Bennewitz, W. Burgard, G. Cielniak, S. Thrun, *Learning Motion Patterns of People for Compliant
+  Robot Motion*, IJRR 24(1), 2005.
+- **The Dijkstra-graph sampling idea the Dijkstra sampler extends.** L. Palmieri, T. P. Kucner, M. Magnusson,
+  A. J. Lilienthal, K. O. Arras, *Kinodynamic Motion Planning on Gaussian Mixture Fields*, IEEE ICRA 2017.
+- **Maps of Dynamics in general.** T. P. Kucner, A. J. Lilienthal, M. Magnusson, L. Palmieri, C. S. Swaminathan,
+  *Probabilistic Mapping of Spatial Motion Patterns for Mobile Robots*, Springer, 2020; and T. P. Kucner et al.,
+  *Survey of Maps of Dynamics for Mobile Robots*, IJRR 42(11), 2023.
+- **ATC dataset** (the bundled real map). D. Brščić, T. Kanda, T. Ikeda, T. Miyashita, *Person Tracking in Large
+  Public Spaces Using 3-D Range Sensors*, IEEE THMS 3(6), 2013.
 
 ## For developers
 

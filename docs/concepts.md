@@ -123,3 +123,17 @@ are inferred from the maps and never entered by hand.
 `dubins` (default; forward only) or `reeds_shepp` (forward and reverse), both with the vehicle's turning radius,
 over the occupancy map's bounds. The published bench-mr runs used Dubins although the paper text said
 Reeds-Shepp, so Dubins stays the default. OMPL's yaw range is `[-π, π)`.
+
+## Where this comes from
+
+| Component | Paper |
+|---|---|
+| Down-The-CLiFF (`dtc`) objective, intensity-map sampling | Swaminathan et al., *Down the CLiFF: Flow-Aware Trajectory Planning under Motion Pattern Uncertainty*, IROS 2018 |
+| Upstream criterion on CLiFF and GMMT maps, benchmark of all four objectives | Swaminathan et al., *Benchmarking the Utility of Maps of Dynamics for Human-Aware Motion Planning*, Frontiers in Robotics and AI 2022 |
+| Dijkstra, intensity and hybrid samplers; ellipsoid heuristic with MoD costs; the ATC experiments and their defaults | Swaminathan et al., *Sampling Functions for Global Motion Planning Using Maps of Dynamics for Mobile Robots*, RAS 2025 |
+| CLiFF-map | Kucner et al., *Enabling Flow Awareness for Mobile Robots in Partially Observable Environments*, RA-L 2017 |
+| GMMT-map | Bennewitz et al., *Learning Motion Patterns of People for Compliant Robot Motion*, IJRR 2005 |
+| Dijkstra-graph sampling that the Dijkstra sampler extends (CLiFF-EUC cost) | Palmieri et al., *Kinodynamic Motion Planning on Gaussian Mixture Fields*, ICRA 2017 |
+| Hybrid A* design | Nav2 SmacPlannerHybrid (design description only) |
+
+Full references are in the README's [Background reading](../README.md#background-reading).
