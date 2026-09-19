@@ -32,7 +32,7 @@ enum class Shape { circle, rectangle };
 enum class StateSpaceType { dubins, reeds_shepp };
 enum class SamplerType { iid, ellipse, intensity, dijkstra, hybrid };
 enum class ObjectiveType { cliff, gmmt, dtc, intensity, path_length };
-enum class PlannerType { rrt_star, ait_star };
+enum class PlannerType { rrt_star, ait_star, hybrid_astar };
 
 std::string to_string(Shape v);
 std::string to_string(StateSpaceType v);
@@ -60,7 +60,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ObjectiveType, {{ObjectiveType::cliff, "cliff"},
                                              {ObjectiveType::dtc, "dtc"},
                                              {ObjectiveType::intensity, "intensity"},
                                              {ObjectiveType::path_length, "path_length"}})
-NLOHMANN_JSON_SERIALIZE_ENUM(PlannerType, {{PlannerType::rrt_star, "rrt_star"}, {PlannerType::ait_star, "ait_star"}})
+NLOHMANN_JSON_SERIALIZE_ENUM(PlannerType, {{PlannerType::rrt_star, "rrt_star"},
+                                           {PlannerType::ait_star, "ait_star"},
+                                           {PlannerType::hybrid_astar, "hybrid_astar"}})
 
 /// The robot. No resolution field: both the collision step and the MoD cost step are inferred from the maps.
 struct VehicleParameters {
@@ -117,6 +119,18 @@ struct PlannerParameters {
   bool informed_sampling{true};  ///< RRT*: use the objective's informed sampler
 };
 
+/// Hybrid A* (PLAN-hybrid-astar.md). Forward-only under Dubins; reverse motion under Reeds-Shepp unless disabled.
+struct HybridAStarParameters {
+  double cell_size_m{0.25};          ///< search cell (duplicate detection and heuristic grid) [m]
+  unsigned int angle_bins{72};       ///< heading bins for duplicate detection (72 = 5 deg)
+  double primitive_length_m{0.0};    ///< 0: cell_size_m * sqrt(2), so every primitive leaves its cell
+  double analytic_ratio{3.5};        ///< Nav2 schedule: shot every floor(h_kin / (ratio * primitive length)) expansions
+  double analytic_max_length_m{5.0}; ///< shots longer than this are not attempted
+  size_t max_expansions{2000000};
+  bool allow_reverse{true};          ///< effective only under Reeds-Shepp (forced off under Dubins)
+  double change_penalty{1000.0};     ///< added to g per direction flip [cost units]; never a reverse penalty
+};
+
 struct Scenario {
   std::string name;
   std::string map_yaml;
@@ -139,6 +153,7 @@ struct RunConfig {
   SamplerParameters sampler;
   OptObjParameters objective;
   PlannerParameters planner;
+  HybridAStarParameters hybrid_astar;
   Scenario scenario;
   RunMeta meta;
 };
@@ -153,6 +168,8 @@ void to_json(nlohmann::json &j, const OptObjParameters &p);
 void from_json(const nlohmann::json &j, OptObjParameters &p);
 void to_json(nlohmann::json &j, const PlannerParameters &p);
 void from_json(const nlohmann::json &j, PlannerParameters &p);
+void to_json(nlohmann::json &j, const HybridAStarParameters &p);
+void from_json(const nlohmann::json &j, HybridAStarParameters &p);
 void to_json(nlohmann::json &j, const Scenario &p);
 void from_json(const nlohmann::json &j, Scenario &p);
 void to_json(nlohmann::json &j, const RunMeta &p);

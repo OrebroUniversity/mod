@@ -7,4 +7,8 @@
 5. Figures: `python analysis/plot_success.py runs/atc -o success.png` and `python analysis/plot_cost.py runs/atc -o cost.png`.
 6. Sample cloud of one run logged with `log_samples`: `python analysis/plot_samples.py runs/atc/<run folder> -o samples.png`.
 
+`test/data/atc/batch_atc_hybrid.json` runs the Hybrid A* vs RRT* vs AIT* comparison (six scenarios, four objectives,
+10 repeats); `plot_success.py` and `plot_cost.py` draw `hybrid_astar` as the dotted line / third box without changes
+(`runs.py` flattens the `HybridAStarParameters` scope as `hybrid_astar.*`).
+
 `sampler_bug_audit.py` / `results_atc.json` are the pre-2.0 audit of the two sampler bugs fixed in M2.

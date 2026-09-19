@@ -109,6 +109,8 @@ ob::PlannerPtr PlannerFactory::buildPlanner(const ::MoD::PlannerParameters &para
       planner->setBatchSize(params.batch_size);
       return planner;
     }
+    case ::MoD::PlannerType::hybrid_astar:
+      return nullptr;
   }
   throw std::invalid_argument("PlannerFactory: unknown planner type");
 }
@@ -170,8 +172,14 @@ PlannerSetup PlannerFactory::build(::MoD::RunConfig &config, MapCache &maps) {
   if (!setup.checker->isValid(goal.get()))
     MOD_LOG("PlannerFactory: goal (%.2f, %.2f) is not valid", config.scenario.goal[0], config.scenario.goal[1]);
 
-  setup.planner = buildPlanner(config.planner, setup.si);
-  setup.planner->setProblemDefinition(setup.pdef);
+  if (config.planner.type == ::MoD::PlannerType::hybrid_astar) {
+    setup.hybrid_astar = std::make_shared<::MoD::HybridAStar>(setup.si, setup.objective, config.hybrid_astar,
+                                                              config.vehicle.turning_radius);
+    config.hybrid_astar.allow_reverse = setup.hybrid_astar->reverseEnabled();
+  } else {
+    setup.planner = buildPlanner(config.planner, setup.si);
+    setup.planner->setProblemDefinition(setup.pdef);
+  }
   MOD_LOG("PlannerFactory: %s on %s, %s / %s / %s, pixel %.3f m, cost step %.3f m, radius %.3f m",
           config.scenario.name.c_str(), ::MoD::to_string(config.vehicle.state_space).c_str(),
           ::MoD::to_string(config.planner.type).c_str(), ::MoD::to_string(config.sampler.type).c_str(),

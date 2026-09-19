@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(mod VERSION 2.0.0 LANGUAGES CXX)
+project(mod VERSION 2.1.0 LANGUAGES CXX)
 cmake_policy(SET CMP0167 NEW)  # use BoostConfig.cmake, not the removed FindBoost module
 
 set(CMAKE_CXX_STANDARD 17)
@@ -46,6 +46,7 @@ add_library(mod SHARED
   src/cliffmap.cpp
   src/gmmtmap.cpp
   src/parameters.cpp
+  src/planners/hybrid_astar.cpp
   src/ompl/mod/objectives/MoDOptimizationObjective.cpp
   src/ompl/mod/objectives/IntensityMapOptimizationObjective.cpp
   src/ompl/mod/objectives/UpstreamCriterionOptimizationObjective.cpp

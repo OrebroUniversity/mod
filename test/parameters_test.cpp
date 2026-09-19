@@ -114,6 +114,42 @@ TEST(Parameters, PlannerRoundTrip) {
   EXPECT_EQ(r.informed_sampling, p.informed_sampling);
 }
 
+TEST(Parameters, HybridAStarRoundTrip) {
+  MoD::HybridAStarParameters d;
+  EXPECT_DOUBLE_EQ(d.cell_size_m, 0.25);
+  EXPECT_EQ(d.angle_bins, 72u);
+  EXPECT_DOUBLE_EQ(d.change_penalty, 1000.0);
+  MoD::HybridAStarParameters p;
+  p.cell_size_m = 0.5;
+  p.angle_bins = 36;
+  p.primitive_length_m = 0.9;
+  p.analytic_ratio = 2.0;
+  p.analytic_max_length_m = 8.0;
+  p.max_expansions = 12345;
+  p.allow_reverse = false;
+  p.change_penalty = 5.0;
+  const auto r = roundTrip(p);
+  EXPECT_DOUBLE_EQ(r.cell_size_m, p.cell_size_m);
+  EXPECT_EQ(r.angle_bins, p.angle_bins);
+  EXPECT_DOUBLE_EQ(r.primitive_length_m, p.primitive_length_m);
+  EXPECT_DOUBLE_EQ(r.analytic_ratio, p.analytic_ratio);
+  EXPECT_DOUBLE_EQ(r.analytic_max_length_m, p.analytic_max_length_m);
+  EXPECT_EQ(r.max_expansions, p.max_expansions);
+  EXPECT_EQ(r.allow_reverse, p.allow_reverse);
+  EXPECT_DOUBLE_EQ(r.change_penalty, p.change_penalty);
+  // Own scope in RunConfig; the planner type string round-trips.
+  MoD::RunConfig c;
+  c.planner.type = MoD::PlannerType::hybrid_astar;
+  c.hybrid_astar = p;
+  const nlohmann::json j = c;
+  EXPECT_TRUE(j.contains("HybridAStarParameters"));
+  EXPECT_EQ(j.at("PlannerParameters").at("type").get<std::string>(), "hybrid_astar");
+  const auto rc = j.get<MoD::RunConfig>();
+  EXPECT_EQ(rc.planner.type, MoD::PlannerType::hybrid_astar);
+  EXPECT_DOUBLE_EQ(rc.hybrid_astar.change_penalty, 5.0);
+  EXPECT_EQ(MoD::plannerTypeFromString("hybrid_astar"), MoD::PlannerType::hybrid_astar);
+}
+
 TEST(Parameters, ScenarioRoundTrip) {
   MoD::Scenario p;
   p.name = "atc-scenario1";

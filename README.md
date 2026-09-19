@@ -2,8 +2,9 @@
 
 `mod` is a C++17 library of Maps-of-Dynamics (MoD) representations (CLiFF-map, GMMT-map, intensity map) and the
 OMPL optimization objectives and informed samplers that use them (Down-The-CLiFF, upstream criterion, intensity,
-Dijkstra / intensity / hybrid samplers), plus a *playground* for experiments: a headless batch runner with JSON run
-logs, an ImGui app, and Python analysis scripts. Version 2.0.0 replaces the bench-mr based experiment pipeline of
+Dijkstra / intensity / hybrid samplers), a Hybrid A* planner over the same OMPL components (`MoD::HybridAStar`,
+`include/mod/planners/hybrid_astar.hpp`), plus a *playground* for experiments: a headless batch runner with JSON
+run logs, an ImGui app, and Python analysis scripts. Version 2.0.0 replaces the bench-mr based experiment pipeline of
 the earlier papers; see `CHANGELOG.rst` for what changed and `AI-PLANS/` for the implementation plans.
 
 ## Build
@@ -25,8 +26,12 @@ tests in `build/bin/tests`. `-DMOD_BUILD_PLAYGROUND=OFF` builds the library alon
 - Library: link `mod::mod`; construct an objective from `MoD::OptObjParameters` + `MoD::SamplerParameters`
   (`include/mod/parameters.hpp`) and set it on an OMPL problem definition; the objective allocates the informed
   sampler the planner asks for.
+- Hybrid A*: `MoD::HybridAStar(si, objective, HybridAStarParameters, turning_radius).solve(start, goal, budget_s)`
+  returns an `ompl::geometric::PathGeometric`; in the playground it is the planner type `hybrid_astar`
+  (`HybridAStarParameters` scope in `config.json`; reverse motion under Reeds-Shepp).
 - Batch: `./build/bin/run_batch test/data/atc/batch_atc_smoke.json --threads 4 --log-dir runs/atc`; one folder per run
-  with `config.json`, `solution.json`, optional `samples.json`.
+  with `config.json`, `solution.json`, optional `samples.json`. `test/data/atc/batch_atc_hybrid.json` is the
+  Hybrid A* / RRT* / AIT* comparison over the six ATC scenarios and four objectives.
 - GUI: `./build/bin/mod_playground_gui --map test/data/atc/atc.yaml`.
 - Plots: see `analysis/README.md`.
 
@@ -47,6 +52,9 @@ included, but the following are derived from it and are marked as such in the fi
   `python/MoD-planning.py`;
 - the success-rate-versus-time and cost figures (`analysis/plot_success.py`, `analysis/plot_cost.py`), from bench-mr
   `python/plot_convergence_mod.py` and `plot_stats.py`.
+
+The Hybrid A* planner (`src/planners/hybrid_astar.cpp`) follows the design description of Nav2's SmacPlannerHybrid
+(Apache-2.0, Steve Macenski et al.); no Nav2 code is included.
 
 Third-party code and data are listed with their licences in `3rd_party_licenses.md`. `mod` itself is LGPL-3.0
 (`LICENSE`).

@@ -38,6 +38,7 @@ struct BatchSpec {
   std::vector<::MoD::SamplerParameters> samplers;
   std::vector<::MoD::OptObjParameters> objectives;
   ::MoD::VehicleParameters vehicle;
+  ::MoD::HybridAStarParameters hybrid_astar;  ///< one scope per batch, copied into every `hybrid_astar` run
   unsigned int repeats{1};
   unsigned int seed0{0};
 };

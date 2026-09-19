@@ -257,18 +257,26 @@ void App::startSolve() {
       logger.finish();
       result->config = config;
 
-      ob::PlannerData pd(setup.si);
-      setup.planner->getPlannerData(pd);
-      std::vector<unsigned int> edges;
-      for (unsigned int v = 0; v < pd.numVertices(); ++v) {
-        const auto *a = pd.getVertex(v).getState()->as<ob::SE2StateSpace::StateType>();
-        edges.clear();
-        pd.getEdges(v, edges);
-        for (unsigned int w : edges) {
-          const auto *b = pd.getVertex(w).getState()->as<ob::SE2StateSpace::StateType>();
-          result->tree_edges.push_back({static_cast<float>(a->getX()), static_cast<float>(a->getY()),
-                                        static_cast<float>(b->getX()), static_cast<float>(b->getY())});
+      if (setup.planner) {
+        ob::PlannerData pd(setup.si);
+        setup.planner->getPlannerData(pd);
+        std::vector<unsigned int> edges;
+        for (unsigned int v = 0; v < pd.numVertices(); ++v) {
+          const auto *a = pd.getVertex(v).getState()->as<ob::SE2StateSpace::StateType>();
+          edges.clear();
+          pd.getEdges(v, edges);
+          for (unsigned int w : edges) {
+            const auto *b = pd.getVertex(w).getState()->as<ob::SE2StateSpace::StateType>();
+            result->tree_edges.push_back({static_cast<float>(a->getX()), static_cast<float>(a->getY()),
+                                          static_cast<float>(b->getX()), static_cast<float>(b->getY())});
+          }
         }
+      }
+      if (setup.hybrid_astar) {
+        result->angle_bins = setup.hybrid_astar->parameters().angle_bins;
+        for (const auto &n : setup.hybrid_astar->expandedNodes())
+          result->expanded.push_back({static_cast<float>(n.x), static_cast<float>(n.y), n.bin,
+                                      n.dir == ::MoD::HybridAStar::Direction::reverse});
       }
       if (result->solution.success) {
         auto path = std::dynamic_pointer_cast<og::PathGeometric>(setup.pdef->getSolutionPath());
@@ -353,7 +361,8 @@ void App::drawPanel(float height) {
   }
 
   if (ImGui::CollapsingHeader("Planner", ImGuiTreeNodeFlags_DefaultOpen)) {
-    enumCombo("planner", config_.planner.type, {::MoD::PlannerType::rrt_star, ::MoD::PlannerType::ait_star});
+    enumCombo("planner", config_.planner.type,
+              {::MoD::PlannerType::rrt_star, ::MoD::PlannerType::ait_star, ::MoD::PlannerType::hybrid_astar});
     ImGui::InputDouble("max time [s]", &config_.planner.max_planning_time, 1.0, 10.0, "%.1f");
     int seed = static_cast<int>(config_.planner.seed);
     if (ImGui::InputInt("seed", &seed)) config_.planner.seed = static_cast<unsigned int>(std::max(0, seed));
@@ -361,9 +370,26 @@ void App::drawPanel(float height) {
       ImGui::InputDouble("range [m] (0=auto)", &config_.planner.range, 0.5, 1.0, "%.2f");
       ImGui::SliderScalar("goal bias", ImGuiDataType_Double, &config_.planner.goal_bias, &kZero, &kOne, "%.3f");
       ImGui::Checkbox("informed sampling", &config_.planner.informed_sampling);
-    } else {
+    } else if (config_.planner.type == ::MoD::PlannerType::ait_star) {
       int batch = static_cast<int>(config_.planner.batch_size);
       if (ImGui::InputInt("batch size", &batch)) config_.planner.batch_size = static_cast<unsigned int>(std::max(1, batch));
+    } else {
+      auto &h = config_.hybrid_astar;
+      ImGui::InputDouble("cell size [m]", &h.cell_size_m, 0.05, 0.25, "%.3f");
+      int bins = static_cast<int>(h.angle_bins);
+      if (ImGui::InputInt("angle bins", &bins)) h.angle_bins = static_cast<unsigned int>(std::max(1, bins));
+      ImGui::InputDouble("primitive [m] (0=cell*sqrt2)", &h.primitive_length_m, 0.05, 0.25, "%.3f");
+      ImGui::InputDouble("analytic ratio", &h.analytic_ratio, 0.5, 1.0, "%.2f");
+      ImGui::InputDouble("analytic max [m]", &h.analytic_max_length_m, 1.0, 5.0, "%.2f");
+      double max_exp = static_cast<double>(h.max_expansions);
+      if (ImGui::InputDouble("max expansions", &max_exp, 100000.0, 1000000.0, "%.0f"))
+        h.max_expansions = static_cast<size_t>(std::max(1.0, max_exp));
+      if (config_.vehicle.state_space == ::MoD::StateSpaceType::reeds_shepp) {
+        ImGui::Checkbox("allow reverse", &h.allow_reverse);
+        ImGui::InputDouble("change penalty", &h.change_penalty, 10.0, 100.0, "%.1f");
+      } else {
+        ImGui::TextDisabled("forward only (Dubins); reverse needs Reeds-Shepp");
+      }
     }
   }
 
@@ -418,6 +444,7 @@ void App::drawPanel(float height) {
     if (ImGui::Checkbox("GMMT cluster polylines", &show_gmmt_) && show_gmmt_) loadGmmtOverlay();
     if (ImGui::Checkbox("intensity heat", &show_intensity_) && show_intensity_) loadIntensityOverlay();
     ImGui::Checkbox("planner tree", &show_tree_);
+    ImGui::Checkbox("expanded nodes (Hybrid A*)", &show_expanded_);
     ImGui::Checkbox("solution path", &show_path_);
   }
 
@@ -533,6 +560,21 @@ void App::drawCanvas(ImVec2 view_min, ImVec2 view_max) {
     if (show_tree_) {
       for (const auto &e : result->tree_edges)
         dl->AddLine(camera_.toScreen(e[0], e[1]), camera_.toScreen(e[2], e[3]), kTreeColour, 1.f);
+    }
+    if (show_expanded_ && !result->expanded.empty()) {
+      // Closed set coloured by heading bin (hue = bin / bins); reverse arrivals as hollow rings.
+      const float radius = std::max(1.5f, static_cast<float>(0.08 * camera_.scale));
+      const float bins = static_cast<float>(std::max(1u, result->angle_bins));
+      for (const auto &n : result->expanded) {
+        float r, g, b;
+        ImGui::ColorConvertHSVtoRGB(static_cast<float>(n.bin) / bins, 0.85f, 0.95f, r, g, b);
+        const ImU32 colour = IM_COL32(static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255), 170);
+        const ImVec2 c = camera_.toScreen(n.x, n.y);
+        if (n.reverse)
+          dl->AddCircle(c, radius * 1.4f, colour, 0, 1.5f);
+        else
+          dl->AddCircleFilled(c, radius, colour);
+      }
     }
     if (show_path_ && !result->path_dense.empty()) {
       std::vector<ImVec2> pts;

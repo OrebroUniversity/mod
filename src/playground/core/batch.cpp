@@ -36,7 +36,8 @@ namespace MoD::playground {
 void to_json(nlohmann::json &j, const BatchSpec &b) {
   j = nlohmann::json{{"log_dir", b.log_dir},     {"threads", b.threads},       {"scenarios", b.scenarios},
                      {"planners", b.planners},   {"samplers", b.samplers},     {"objectives", b.objectives},
-                     {"vehicle", b.vehicle},     {"repeats", b.repeats},       {"seed0", b.seed0}};
+                     {"vehicle", b.vehicle},     {"hybrid_astar", b.hybrid_astar}, {"repeats", b.repeats},
+                     {"seed0", b.seed0}};
 }
 
 void from_json(const nlohmann::json &j, BatchSpec &b) {
@@ -47,6 +48,7 @@ void from_json(const nlohmann::json &j, BatchSpec &b) {
   if (j.contains("samplers")) b.samplers = j.at("samplers").get<std::vector<::MoD::SamplerParameters>>();
   if (j.contains("objectives")) b.objectives = j.at("objectives").get<std::vector<::MoD::OptObjParameters>>();
   if (j.contains("vehicle")) b.vehicle = j.at("vehicle").get<::MoD::VehicleParameters>();
+  if (j.contains("hybrid_astar")) b.hybrid_astar = j.at("hybrid_astar").get<::MoD::HybridAStarParameters>();
   if (j.contains("repeats")) b.repeats = j.at("repeats").get<unsigned int>();
   if (j.contains("seed0")) b.seed0 = j.at("seed0").get<unsigned int>();
 }
@@ -89,6 +91,7 @@ std::vector<::MoD::RunConfig> expand(const BatchSpec &spec) {
           for (unsigned int r = 0; r < spec.repeats; ++r) {
             ::MoD::RunConfig c;
             c.vehicle = spec.vehicle;
+            c.hybrid_astar = spec.hybrid_astar;
             c.scenario = scenario;
             c.planner = planner;
             c.planner.seed = spec.seed0 + index;

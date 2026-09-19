@@ -26,6 +26,7 @@
 
 #include <memory>
 #include <mod/parameters.hpp>
+#include <mod/planners/hybrid_astar.hpp>
 
 #include "core/footprint_checker.hpp"
 #include "core/map_cache.hpp"
@@ -43,14 +44,18 @@ struct PlannerSetup {
   ompl::base::OptimizationObjectivePtr objective;
   /// The objective as a MoD objective; null for `path_length`.
   ompl::MoD::MoDOptimizationObjectivePtr mod_objective;
+  /// The OMPL planner (RRT* / AIT*); null for `hybrid_astar`.
   ompl::base::PlannerPtr planner;
+  /// Hybrid A* (not an ompl::base::Planner); null for the OMPL planners.
+  ::MoD::HybridAStarPtr hybrid_astar;
 };
 
 /**
  * Builds a PlannerSetup from a RunConfig: state space (Dubins / Reeds-Shepp) over the occupancy bounds,
  * FootprintChecker with the circumscribed radius, collision resolution = pixel / maximum extent, objective
  * from OptObjParameters with cost step min(MoD cell, pixel), sampler dispatch through the objective, and the
- * planner (RRT* or AIT*). Fills `config.derived`. Maps come from the cache. `ompl::RNG::setSeed` is NOT
+ * planner (RRT*, AIT* or Hybrid A*). Fills `config.derived` and, for Hybrid A*, writes the effective
+ * `allow_reverse` back into `config.hybrid_astar`. Maps come from the cache. `ompl::RNG::setSeed` is NOT
  * called here (it is global); callers seed before building.
  */
 class PlannerFactory {
@@ -61,6 +66,7 @@ class PlannerFactory {
   static ompl::MoD::MoDOptimizationObjectivePtr buildObjective(::MoD::RunConfig &config, MapCache &maps,
                                                                const ompl::base::SpaceInformationPtr &si);
 
+  /// The OMPL planner for `rrt_star` / `ait_star`; null for `hybrid_astar` (see `build`).
   static ompl::base::PlannerPtr buildPlanner(const ::MoD::PlannerParameters &params,
                                              const ompl::base::SpaceInformationPtr &si);
 };

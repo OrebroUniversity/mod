@@ -25,7 +25,7 @@ mod_add_test(hybrid_sampler_test)
 mod_add_test(timing_test)
 
 if(TARGET mod_playground)
-  foreach(name occupancy_map_test footprint_test run_logger_test)
+  foreach(name occupancy_map_test footprint_test run_logger_test hybrid_astar_test)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE mod_test_common mod::playground)
     set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${MOD_TEST_BIN_DIR})

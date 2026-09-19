@@ -7,9 +7,30 @@
 **Motion direction.** HA1 and HA2 are forward-only. HA3 adds reverse motion for Reeds-Shepp runs. No objective change is needed for that: the objectives already take the MoD direction from the position delta between interpolated points, i.e. the velocity direction, and that is the decided semantics (which way the robot faces does not matter; which way it moves does).
 
 ## Milestone progress
-- [ ] HA1 — `HybridAStar` core with heuristic, primitives, analytic expansion, tests
-- [ ] HA2 — playground integration: factory, batch runner, GUI, ATC comparison batch
-- [ ] HA3 — reverse motion under Reeds-Shepp: reverse primitives, RS shot, RS heuristic, cusp penalty
+- [x] HA1 — `HybridAStar` core with heuristic, primitives, analytic expansion, tests
+- [x] HA2 — playground integration: factory, batch runner, GUI, ATC comparison batch
+- [x] HA3 — reverse motion under Reeds-Shepp: reverse primitives, RS shot, RS heuristic, cusp penalty
+
+## Implementation notes (deviations from the text below, decided while building)
+- Constructor: `HybridAStar(si, ompl::base::OptimizationObjectivePtr, HybridAStarParameters, turning_radius)`. The
+  objective is the OMPL base type so the `path_length` objective (a plain `PathLengthOptimizationObjective`) works
+  as in the tests; `w_d` for `h_kin` is read from the objective when it is a MoD objective, else 1. The turning
+  radius is a constructor argument because OMPL's Dubins / Reeds-Shepp spaces do not expose theirs.
+- `allow_reverse` defaults to `true` in the struct and is forced off unless the space is Reeds-Shepp, which gives
+  the intended "false under Dubins, true under Reeds-Shepp" without a tri-state; the factory writes the effective
+  value back into `config.json`.
+- `h_grid` is `+inf` for poses whose cell centre is invalid or unreachable; the search then falls back to `h_kin`
+  alone instead of pruning the node (a valid pose can sit in a cell whose centre is not).
+- HA3 `h_kin` under reverse motion is `w_d * min(Dubins [+ penalty if arriving in reverse], RS length + penalty x
+  RS cusps relative to the arriving direction)` rather than the bare RS distance: with the default penalty this
+  equals the forward-only heuristic wherever the RS optimum has a cusp, so the open-map path is identical with and
+  without reverse (the HA3 test); with `change_penalty = 0` it is the RS distance.
+- The first primitive out of the start pays no cusp penalty (the robot is stationary; its direction is free).
+- Duplicate detection keeps one node per key with the best g (updated in place, lazy deletion in the open list);
+  the goal test ignores the direction bit.
+- OMPL's SO(2) bounds are `[-pi, pi)`: the planner normalises yaws into that range; a scenario yaw of exactly `pi`
+  must be given as `-pi`.
+- Batch: `BatchSpec` has one `hybrid_astar` scope copied into every run (`test/data/atc/batch_atc_hybrid.json`).
 
 ## Agent protocol
 Same as PLAN.md: first unchecked milestone, only that milestone, tests green, one commit `HA<n>: …`, tick and commit `HA<n>: done`, stop.
@@ -35,13 +56,13 @@ Same as PLAN.md: first unchecked milestone, only that milestone, tests green, on
 
 ## HA1 — core
 **Touches:** `include/mod/planners/hybrid_astar.hpp`, `src/planners/hybrid_astar.cpp`, `include/mod/grid_dijkstra.hpp` (from PLAN.md M3), `include/mod/parameters.hpp`, `test/`.
-- [ ] `GridDijkstra` (already factored in PLAN.md M3) is used in reverse mode: popping node m relaxes each neighbour n with `w(n→m) = motionCost(n, m)`; lazy expansion: `costTo(node)` runs the queue until that node is settled, so only the region the search touches is ever costed. Cell size = `cell_size_m`. Nodes outside bounds or invalid → `+inf`.
-- [ ] Node store: `std::vector<Node{pose[3], g, h, parent, dir}>`; open list `std::priority_queue` of `(f, index)` with lazy deletion; closed set `std::unordered_set<uint64_t>` keyed by `(col, row, bin)`; bin = `round(yaw / (2π / bins)) mod bins`.
-- [ ] Primitive generator: for a pose and turning radius r, straight `(L)`, left/right arcs of length L on radius r; endpoint pose closed-form. Reject primitives leaving the state bounds.
-- [ ] Main loop: pop best f; skip if closed; goal test; analytic-expansion schedule; expand three primitives: `checkMotion`, `g' = g + motionCost(a,b).value()`, `h'` as above, push. Wall-clock check every 256 expansions.
-- [ ] `h_kin` uses a private `DubinsStateSpace(r)` regardless of the run's state space (forward-only, see top); memoised in an `unordered_map<uint64_t,double>` keyed like the closed set.
-- [ ] Path extraction by parent chain; states allocated from `si`.
-- [ ] Tests (`test/hybrid_astar_test.cpp`, synthetic maps through the M4 `OccupancyMap` + `FootprintChecker`, path-length and intensity objectives):
+- [x] `GridDijkstra` (already factored in PLAN.md M3) is used in reverse mode: popping node m relaxes each neighbour n with `w(n→m) = motionCost(n, m)`; lazy expansion: `costTo(node)` runs the queue until that node is settled, so only the region the search touches is ever costed. Cell size = `cell_size_m`. Nodes outside bounds or invalid → `+inf`.
+- [x] Node store: `std::vector<Node{pose[3], g, h, parent, dir}>`; open list `std::priority_queue` of `(f, index)` with lazy deletion; closed set `std::unordered_set<uint64_t>` keyed by `(col, row, bin)`; bin = `round(yaw / (2π / bins)) mod bins`.
+- [x] Primitive generator: for a pose and turning radius r, straight `(L)`, left/right arcs of length L on radius r; endpoint pose closed-form. Reject primitives leaving the state bounds.
+- [x] Main loop: pop best f; skip if closed; goal test; analytic-expansion schedule; expand three primitives: `checkMotion`, `g' = g + motionCost(a,b).value()`, `h'` as above, push. Wall-clock check every 256 expansions.
+- [x] `h_kin` uses a private `DubinsStateSpace(r)` regardless of the run's state space (forward-only, see top); memoised in an `unordered_map<uint64_t,double>` keyed like the closed set.
+- [x] Path extraction by parent chain; states allocated from `si`.
+- [x] Tests (`test/hybrid_astar_test.cpp`, synthetic maps through the M4 `OccupancyMap` + `FootprintChecker`, path-length and intensity objectives):
   - empty 20×20 m map, start (2,2,0) → goal (18,18,0): solved, every path state valid, cost within 10 % of the Dubins distance × `w_d`.
   - wall with one 1.5 m gap: path passes the gap, all states valid, `checkMotion` holds on every consecutive pair.
   - heuristic sanity: `h_grid(goal cell) == 0`; `h` at the start ≤ 1.15 × returned path cost.
@@ -52,20 +73,20 @@ Same as PLAN.md: first unchecked milestone, only that milestone, tests green, on
 
 ## HA2 — playground integration and comparison
 **Touches:** `src/playground/core/PlannerFactory`, `tools/run_batch.cpp`, `src/playground/gui/`, `analysis/`.
-- [ ] `PlannerParameters.type` gains `hybrid_astar`; `RunConfig` gains the `HybridAStar` scope; the factory builds `HybridAStar` from the same `SpaceInformation` and objective as the others; `RunLogger` unchanged (fields already fit).
-- [ ] GUI: planner dropdown lists `hybrid_astar`; overlay toggle "expanded nodes" draws the closed set as dots coloured by heading bin; the solution path draws as for the others. The parameter panel shows the `HybridAStar` scope when selected.
-- [ ] `run_batch` on the six ATC scenarios: `hybrid_astar` vs `rrt_star` (dijkstra 0.05/0.5) vs `ait_star` with the four objectives, 10 repeats each (Hybrid A* is deterministic; repeats only measure timing noise). `analysis/plot_success.py` and `plot_cost.py` include it without changes.
-- [ ] `CHANGELOG.rst`: entry with the ATC comparison summary table.
+- [x] `PlannerParameters.type` gains `hybrid_astar`; `RunConfig` gains the `HybridAStar` scope; the factory builds `HybridAStar` from the same `SpaceInformation` and objective as the others; `RunLogger` unchanged (fields already fit).
+- [x] GUI: planner dropdown lists `hybrid_astar`; overlay toggle "expanded nodes" draws the closed set as dots coloured by heading bin; the solution path draws as for the others. The parameter panel shows the `HybridAStar` scope when selected.
+- [x] `run_batch` on the six ATC scenarios: `hybrid_astar` vs `rrt_star` (dijkstra 0.05/0.5) vs `ait_star` with the four objectives, 10 repeats each (Hybrid A* is deterministic; repeats only measure timing noise). `analysis/plot_success.py` and `plot_cost.py` include it without changes.
+- [x] `CHANGELOG.rst`: entry with the ATC comparison summary table.
 - **Acceptance:** the batch completes, plots show all three planners, GUI solves ATC with Hybrid A* and shows expanded nodes.
 
 ## HA3 — reverse motion (Reeds-Shepp runs)
 **Touches:** `hybrid_astar.{hpp,cpp}`, `parameters.hpp`, `test/hybrid_astar_test.cpp`, GUI parameter panel.
-- [ ] `allow_reverse` is forced to `false` under Dubins and defaults to `true` under Reeds-Shepp. When enabled, each node expands six primitives: the three forward ones and their reverse counterparts (same arcs traversed backwards; the endpoint yaw follows the car model, the position moves against the heading). `Node.dir ∈ {fwd, rev}`; a primitive whose direction differs from its parent's adds `change_penalty` to g.
-- [ ] Validity and cost of a reverse primitive use the same calls, `checkMotion(a, b)` and `motionCost(a, b)`, over the run's `ReedsSheppStateSpace`; the objectives cost it by the velocity direction automatically (no change to any objective).
-- [ ] Analytic shot uses `reedsShepp(node, goal)` instead of the Dubins path; cusps inside the shot are counted from the RS path's segment signs and each adds `change_penalty`. `h_kin` switches to `w_d × reeds_shepp_space->distance(state, goal)`.
-- [ ] Duplicate detection key gains the direction bit `(col, row, bin, dir)` so a forward and a reverse arrival at the same bin are distinct nodes.
-- [ ] Tests: dead-end corridor where the only way out is to back up: no solution with `allow_reverse=false`, solution with exactly one cusp with `allow_reverse=true`; the same open-map scenario as HA1 gives the identical forward path under both settings (the penalty keeps cusps out); `change_penalty = 0` on a T-shaped map yields a path with cusps whose objective cost is lower than the forward-only path's.
-- [ ] GUI: `allow_reverse` and `change_penalty` in the HybridAStar panel; reverse primitives drawn in the expanded-node overlay with a distinct marker.
+- [x] `allow_reverse` is forced to `false` under Dubins and defaults to `true` under Reeds-Shepp. When enabled, each node expands six primitives: the three forward ones and their reverse counterparts (same arcs traversed backwards; the endpoint yaw follows the car model, the position moves against the heading). `Node.dir ∈ {fwd, rev}`; a primitive whose direction differs from its parent's adds `change_penalty` to g.
+- [x] Validity and cost of a reverse primitive use the same calls, `checkMotion(a, b)` and `motionCost(a, b)`, over the run's `ReedsSheppStateSpace`; the objectives cost it by the velocity direction automatically (no change to any objective).
+- [x] Analytic shot uses `reedsShepp(node, goal)` instead of the Dubins path; cusps inside the shot are counted from the RS path's segment signs and each adds `change_penalty`. `h_kin` switches to `w_d × reeds_shepp_space->distance(state, goal)`.
+- [x] Duplicate detection key gains the direction bit `(col, row, bin, dir)` so a forward and a reverse arrival at the same bin are distinct nodes.
+- [x] Tests: dead-end corridor where the only way out is to back up: no solution with `allow_reverse=false`, solution with exactly one cusp with `allow_reverse=true`; the same open-map scenario as HA1 gives the identical forward path under both settings (the penalty keeps cusps out); `change_penalty = 0` on a T-shaped map yields a path with cusps whose objective cost is lower than the forward-only path's.
+- [x] GUI: `allow_reverse` and `change_penalty` in the HybridAStar panel; reverse primitives drawn in the expanded-node overlay with a distinct marker.
 - **Acceptance:** HA3 tests pass; HA1/HA2 tests unchanged.
 
 ## Edge cases & risks

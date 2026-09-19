@@ -48,7 +48,7 @@ void from_json(const nlohmann::json &j, Solution &s);
 /**
  * Runs the planner of a PlannerSetup for at most `max_time_s` seconds and evaluates the result with the
  * setup's objective. `cancel()` may be called from another thread. The first solution time comes from the
- * planners' intermediate-solution callback.
+ * planners' intermediate-solution callback; for Hybrid A* (single solution) it equals the planning time.
  */
 class Solver {
  public:

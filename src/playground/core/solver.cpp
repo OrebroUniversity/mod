@@ -23,6 +23,7 @@
 #include "core/solver.hpp"
 
 #include <ompl/base/PlannerTerminationCondition.h>
+#include <ompl/base/goals/GoalState.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 
@@ -114,17 +115,27 @@ Solution Solver::solve(double max_time_s) {
         if (std::isnan(first_solution)) first_solution = elapsed();
       });
 
-  ob::PlannerTerminationCondition ptc([&]() { return cancel_.load() || elapsed() >= max_time_s; });
-
-  setup_.planner->setup();
-  const ob::PlannerStatus status = setup_.planner->solve(ptc);
+  std::string status;
+  if (setup_.hybrid_astar) {
+    // Hybrid A*: one exact solution or none; its own time budget and cancel poll.
+    const ob::State *start = setup_.pdef->getStartState(0);
+    const ob::State *goal = setup_.pdef->getGoal()->as<ob::GoalState>()->getState();
+    auto path = std::make_shared<og::PathGeometric>(
+        setup_.hybrid_astar->solve(start, goal, max_time_s, [&]() { return cancel_.load(); }));
+    if (setup_.hybrid_astar->result().solved) setup_.pdef->addSolutionPath(path, false, 0.0, "HybridAStar");
+    status = "HybridAStar " + setup_.hybrid_astar->result().termination;
+  } else {
+    ob::PlannerTerminationCondition ptc([&]() { return cancel_.load() || elapsed() >= max_time_s; });
+    setup_.planner->setup();
+    status = setup_.planner->solve(ptc).asString();
+  }
   Solution sol = evaluate(setup_);
   sol.planning_time_s = elapsed();
   if (sol.success && std::isnan(first_solution)) first_solution = sol.planning_time_s;
   sol.time_to_first_solution_s = sol.success ? first_solution : std::nan("");
   setup_.pdef->setIntermediateSolutionCallback(nullptr);
 
-  MOD_LOG("Solver: %s in %.2f s (%s), first solution %.2f s, cost %.3f, length %.2f m", status.asString().c_str(),
+  MOD_LOG("Solver: %s in %.2f s (%s), first solution %.2f s, cost %.3f, length %.2f m", status.c_str(),
           sol.planning_time_s, sol.success ? "exact" : "no exact solution", sol.time_to_first_solution_s,
           sol.cost_total, sol.path_length_m);
   return sol;

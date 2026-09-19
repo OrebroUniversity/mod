@@ -158,6 +158,27 @@ void from_json(const json &j, PlannerParameters &p) {
   get(j, "informed_sampling", p.informed_sampling);
 }
 
+void to_json(json &j, const HybridAStarParameters &p) {
+  j = json{{"cell_size_m", p.cell_size_m},
+           {"angle_bins", p.angle_bins},
+           {"primitive_length_m", p.primitive_length_m},
+           {"analytic_ratio", p.analytic_ratio},
+           {"analytic_max_length_m", p.analytic_max_length_m},
+           {"max_expansions", p.max_expansions},
+           {"allow_reverse", p.allow_reverse},
+           {"change_penalty", p.change_penalty}};
+}
+void from_json(const json &j, HybridAStarParameters &p) {
+  get(j, "cell_size_m", p.cell_size_m);
+  get(j, "angle_bins", p.angle_bins);
+  get(j, "primitive_length_m", p.primitive_length_m);
+  get(j, "analytic_ratio", p.analytic_ratio);
+  get(j, "analytic_max_length_m", p.analytic_max_length_m);
+  get(j, "max_expansions", p.max_expansions);
+  get(j, "allow_reverse", p.allow_reverse);
+  get(j, "change_penalty", p.change_penalty);
+}
+
 void to_json(json &j, const Scenario &p) {
   j = json{{"name", p.name}, {"map_yaml", p.map_yaml}, {"start", p.start}, {"goal", p.goal}};
 }
@@ -184,8 +205,8 @@ void from_json(const json &j, RunMeta &p) {
 void to_json(json &j, const RunConfig &p) {
   j = json{{"VehicleParameters", p.vehicle}, {"Derived", p.derived},
            {"SamplerParameters", p.sampler}, {"OptObjParameters", p.objective},
-           {"PlannerParameters", p.planner}, {"Scenario", p.scenario},
-           {"RunMeta", p.meta}};
+           {"PlannerParameters", p.planner}, {"HybridAStarParameters", p.hybrid_astar},
+           {"Scenario", p.scenario},         {"RunMeta", p.meta}};
 }
 void from_json(const json &j, RunConfig &p) {
   get(j, "VehicleParameters", p.vehicle);
@@ -193,6 +214,7 @@ void from_json(const json &j, RunConfig &p) {
   get(j, "SamplerParameters", p.sampler);
   get(j, "OptObjParameters", p.objective);
   get(j, "PlannerParameters", p.planner);
+  get(j, "HybridAStarParameters", p.hybrid_astar);
   get(j, "Scenario", p.scenario);
   get(j, "RunMeta", p.meta);
 }

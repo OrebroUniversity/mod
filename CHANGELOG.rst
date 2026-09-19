@@ -2,6 +2,85 @@
 Changelog for package mod
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.0 (2026-09-19)
+------------------
+Hybrid A* planner (``AI-PLANS/PLAN-hybrid-astar.md``, milestones HA1-HA3).
+
+Library
+~~~~~~~
+* ``MoD::HybridAStar`` (``include/mod/planners/hybrid_astar.hpp``): own implementation (not an
+  ``ompl::base::Planner``) over the same ``SpaceInformation`` (state space, bounds, footprint checker, collision
+  resolution) and ``OptimizationObjective`` as the sampling planners, so its solution cost is directly comparable in
+  the run logs. Constructed from ``(si, objective, HybridAStarParameters, turning_radius)``;
+  ``solve(start, goal, budget_s) -> PathGeometric``.
+
+  - Nodes keep their exact continuous pose; the ``(cell 0.25 m, 72 heading bins[, direction])`` key is only for
+    duplicate detection (one node per key with the best g).
+  - Three primitives (straight, left, right at the minimum turning radius) of length ``cell * sqrt(2)``; validity by
+    ``si->checkMotion`` at the inferred pixel step, g-cost by ``objective->motionCost`` (the objective integrates
+    along the arc through the space's own interpolation).
+  - ``h = max(h_grid, h_kin)``: ``h_grid`` is a goal-rooted, lazily expanded ``GridDijkstra`` in reverse mode with
+    ``motionCost`` as edge weight (obstacle- and MoD-aware); ``h_kin = w_d * Dubins distance``, memoised per key.
+  - Analytic expansion on Nav2's schedule (a shot every ``max(1, floor(h_kin / (3.5 * primitive length)))``
+    expansions, only if at most 5 m long); the first valid shot ends the search. Goal test: shot, or same cell and
+    bin as the goal (then connected to the exact goal when ``checkMotion`` allows).
+  - Reverse motion under Reeds-Shepp (HA3): six primitives, direction bit in the key, Reeds-Shepp shot with its
+    cusps counted from the segment signs, ``h_kin = w_d * min(Dubins, RS length + change_penalty * cusps)``. No
+    reverse penalty ever; one ``change_penalty`` (default 1000) per direction flip, so cusps appear only where no
+    forward solution exists unless the penalty is lowered. Forward-only runs never pay it, so their cost is exactly
+    the objective's.
+  - Termination: first solution, time budget, cancel callback, ``max_expansions``, or empty open list.
+    ``result()`` reports termination, expansions, cusps and costs; ``expandedNodes()`` returns the closed set.
+
+* ``HybridAStarParameters`` (own scope ``HybridAStarParameters`` in ``config.json``) and the planner type
+  ``hybrid_astar`` in ``PlannerParameters``. Version 2.1.0.
+* Design after Nav2's SmacPlannerHybrid description (Apache-2.0); no Nav2 code (``3rd_party_licenses.md``).
+
+Playground
+~~~~~~~~~~
+* ``PlannerFactory`` builds ``HybridAStar`` from the same ``SpaceInformation`` and objective (``PlannerSetup::
+  hybrid_astar``; ``planner`` stays null); ``Solver`` runs it with the run's time budget and cancel flag and adds
+  the path to the problem definition, so ``RunLogger`` and ``Solver::evaluate`` are unchanged
+  (``time_to_first_solution_s = planning_time_s``). ``BatchSpec`` gains one ``hybrid_astar`` scope.
+* GUI: ``hybrid_astar`` in the planner dropdown with its parameter panel (``allow_reverse`` and ``change_penalty``
+  shown under Reeds-Shepp); overlay "expanded nodes" draws the closed set coloured by heading bin, reverse
+  arrivals as rings.
+* ``analysis/runs.py`` flattens the new scope as ``hybrid_astar.*``; the plots already list ``hybrid_astar``.
+* Tests: ``test/hybrid_astar_test.cpp`` (synthetic maps through ``OccupancyMap`` + ``FootprintChecker``): empty
+  map within 10 % of the Dubins length, wall gap, heuristic sanity, high-intensity corridor avoided, determinism,
+  0.01 s budget, invalid / unreachable goal, dead end needing exactly one cusp, identical open-map path with and
+  without reverse, zero penalty preferring a cheaper cusp path on a T map.
+
+ATC comparison (``test/data/atc/batch_atc_hybrid.json``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Six scenarios x {hybrid_astar, rrt_star, ait_star} x dijkstra sampler (bias 0.05, cell 0.5 m) x four objectives x
+10 repeats, Dubins r = 1 m, 30 s budget each, 20 runs in parallel on 24 cores (Hybrid A* is deterministic; its
+repeats only measure timing noise, inflated here by the parallel load: alone it takes 0.04-0.2 s per ATC
+scenario). Medians over the solved runs; ``c`` is the unweighted MoD component.
+
+=========  ============  ======  =================  ===========  ============  ==========
+objective  planner       solved  first solution [s] cost         MoD cost c    length [m]
+=========  ============  ======  =================  ===========  ============  ==========
+cliff      rrt_star      59/60   0.79               66.82        160.43        50.34
+cliff      ait_star      54/60   4.89               65.19        176.75        47.59
+cliff      hybrid_astar  60/60   0.63               61.75        157.40        45.79
+gmmt       rrt_star      59/60   1.09               49.50        37.37         43.99
+gmmt       ait_star      56/60   5.50               53.78        46.90         47.97
+gmmt       hybrid_astar  60/60   0.76               49.94        33.66         45.86
+dtc        rrt_star      57/60   0.78               63.03        692.92        45.54
+dtc        ait_star      54/60   8.70               60.04        747.52        46.25
+dtc        hybrid_astar  60/60   0.68               58.55        633.45        45.67
+intensity  rrt_star      59/60   0.65               75.07        153.27        44.00
+intensity  ait_star      48/60   7.03               74.42        160.07        44.94
+intensity  hybrid_astar  60/60   0.57               75.93        152.33        46.46
+=========  ============  ======  =================  ===========  ============  ==========
+
+Hybrid A* solves every scenario under every objective within a second and its single solution costs about the
+same as, or less than, the sampling planners' best after 30 s (cliff -8 %, dtc -7 %, gmmt and intensity within
+1 % of RRT*). The comparison is forward-only (Dubins); the cell x bin closed set means the returned cost is
+compared, not assumed optimal. ``analysis/plot_success.py`` and ``plot_cost.py`` on ``runs/atc_hybrid`` show the
+three planners without changes.
+
 2.0.0 (2026-09-19)
 ------------------
 Self-contained, thread-safe library of MoD objectives and samplers with paper-faithful sampling, fast Dijkstra

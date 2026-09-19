@@ -2,7 +2,8 @@
 
 Each run folder holds config.json (RunConfig, one object per scope) and solution.json. The config scopes are
 flattened with scope prefixes: VehicleParameters -> vehicle.*, Derived -> derived.*, SamplerParameters -> sampler.*,
-OptObjParameters -> objective.*, PlannerParameters -> planner.*, Scenario -> scenario.*, RunMeta -> meta.*.
+OptObjParameters -> objective.*, PlannerParameters -> planner.*, HybridAStarParameters -> hybrid_astar.*,
+Scenario -> scenario.*, RunMeta -> meta.*.
 Solution fields: success, planning_time_s, time_to_first_solution_s, cost_total, cost_d, cost_q, cost_c,
 path_length_m, n_path_states, has_samples, run_dir.
 
@@ -20,6 +21,7 @@ SCOPES = {
     "SamplerParameters": "sampler",
     "OptObjParameters": "objective",
     "PlannerParameters": "planner",
+    "HybridAStarParameters": "hybrid_astar",
     "Scenario": "scenario",
     "RunMeta": "meta",
 }

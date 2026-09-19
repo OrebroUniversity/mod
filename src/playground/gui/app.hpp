@@ -69,6 +69,14 @@ struct SolveResult {
   std::string error;
   std::vector<std::array<float, 4>> tree_edges;   ///< x1, y1, x2, y2 from PlannerData
   std::vector<std::array<float, 2>> path_dense;   ///< interpolated solution path
+  /// Hybrid A*: closed nodes (x, y, heading bin, reverse flag) in expansion order.
+  struct Expanded {
+    float x, y;
+    unsigned int bin;
+    bool reverse;
+  };
+  std::vector<Expanded> expanded;
+  unsigned int angle_bins{72};
 };
 
 struct Options {
@@ -104,7 +112,8 @@ class App {
   std::string status_;
 
   // overlays
-  bool show_cliff_{false}, show_gmmt_{false}, show_intensity_{false}, show_tree_{true}, show_path_{true};
+  bool show_cliff_{false}, show_gmmt_{false}, show_intensity_{false}, show_tree_{true}, show_path_{true},
+      show_expanded_{true};
   struct Arrow {
     float x, y, dx, dy;
   };
