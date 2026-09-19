@@ -20,82 +20,32 @@
 
 #include <ompl/mod/objectives/MoDOptimizationObjective.h>
 
-#include <Eigen/Dense>
-#include <array>
-#include <functional>
 #include <mod/cliffmap.hpp>
 
 namespace ompl::MoD {
+
 /**
- * The optimization objective class for DownTheCLiFF cost.
- * This is a multi-optimization objective but doens't derive from the
- * corresponding OMPL class.
+ * Down-The-CLiFF cost: Mahalanobis distance of the motion (direction, max speed) to every CLiFF-map component at
+ * the point, clamped at `mahalanobis_threshold`, weighted by the mixing factor (optional) and by the intensity q
+ * (if an intensity map is given).
  */
 class DTCOptimizationObjective : public MoDOptimizationObjective {
-  /// Maximum vehicle speed used in the computation of Down-The-CLiFF cost.
-  double max_vehicle_speed;
+  ::MoD::CLiFFMapConstPtr cliffmap_;
 
-  /// Mahalanobis distance threshold.
-  double mahalanobis_distance_threshold;
-
-  /// Will this cost objective use the mixing factor?
-  bool use_mixing_factor;
-
-  /// A std smart pointer to the CLiFFMap.
-  ::MoD::CLiFFMap cliffmap;
-
-  ::MoD::IntensityMap intensitymap;
-
-  bool use_intensity{false};
+ protected:
+  double modCost(double x, double y, double alpha) const override;
 
  public:
-  /**
-   * Constructor
-   * @param si SpaceInformationPtr that we get from the problem setup.
-   */
-  DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                           const ::MoD::CLiFFMap &cliffmap,
-                           double wd,
-                           double wq,
-                           double wc,
-                           double maxvs,
-                           double mahalanobis_distance_threshold = 10.0,
-                           bool use_mixing_factor = true,
-                           const std::string &sampler_type = "",
-                           const std::string &intensity_map_file_name = "",
-                           double bias = 0.05,
-                           bool uniform_valid = false,
-                           bool debug = false);
-
-  DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                           const std::string &cliffmap_file_name,
-                           const std::string &intensity_map_file_name,
-                           double wd,
-                           double wq,
-                           double wc,
-                           double maxvs,
-                           double mahalanobis_distance_threshold = 10.0,
-                           bool use_mixing_factor = true,
-                           const std::string &sampler_type = "",
-                           double bias = 0.05,
-                           bool uniform_valid = false,
-                           bool debug = false);
+  /// Maps are loaded from `params.cliff_map_file` / `params.intensity_map_file` unless given preloaded.
+  DTCOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ::MoD::OptObjParameters &params,
+                           const ::MoD::SamplerParameters &sampler_params, ::MoD::CLiFFMapConstPtr cliffmap = nullptr,
+                           ::MoD::IntensityMapConstPtr intensity_map = nullptr);
 
   ~DTCOptimizationObjective() override = default;
 
-  bool isSymmetric() const override { return false; }
-
-  ompl::base::Cost stateCost(const ompl::base::State *s) const override;
-
-  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
-
-  inline void setMahalanobisDistanceThreshold(double mahalanobis_distance_threshold) {
-    this->mahalanobis_distance_threshold = mahalanobis_distance_threshold;
-  }
-
-  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  inline const ::MoD::CLiFFMapConstPtr &getCLiFFMap() const { return cliffmap_; }
 };
 
 typedef std::shared_ptr<DTCOptimizationObjective> DTCOptimizationObjectivePtr;
 
-}  // namespace ompl
+}  // namespace ompl::MoD

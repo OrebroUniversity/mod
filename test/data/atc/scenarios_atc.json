@@ -1,0 +1,8 @@
+[
+  {"name": "atc-scenario1-rev", "map_yaml": "atc.yaml", "start": [-19.575, 12.390, -0.84], "goal": [47.690, -18.848, 0.84]},
+  {"name": "atc-scenario2-rev", "map_yaml": "atc.yaml", "start": [-3.85, -6.82, 2.3], "goal": [21.471, -17.647, -2.3]},
+  {"name": "atc-scenario1", "map_yaml": "atc.yaml", "start": [47.690, -18.848, -2.356], "goal": [-19.575, 12.390, 2.313]},
+  {"name": "atc-scenario2", "map_yaml": "atc.yaml", "start": [21.471, -17.647, 0.733], "goal": [-3.85, -6.82, -0.8203]},
+  {"name": "atc-scenario3", "map_yaml": "atc.yaml", "start": [-0.133, -8.555, 2.604], "goal": [31.093, -20.553, -1.999]},
+  {"name": "atc-scenario4", "map_yaml": "atc.yaml", "start": [11.5, -5.0, 2.604], "goal": [-25.00, 3.00, -1.999]}
+]

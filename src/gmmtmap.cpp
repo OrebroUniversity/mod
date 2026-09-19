@@ -17,10 +17,12 @@
  *   <https://www.gnu.org/licenses/>.
  */
 
-#include <boost/log/trivial.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <mod/gmmtmap.hpp>
+#include <mod/log.hpp>
+
+#include <algorithm>
 
 namespace MoD {
 
@@ -61,7 +63,7 @@ void GMMTMap::computeHeadingAndConstructRTree() {
 
       if (i == 0) {
         heading = atan2(cluster.mean[i + 1][1] - cluster.mean[i][1], cluster.mean[i + 1][0] - cluster.mean[i][0]);
-      } else if (i + 1 == this->clusters_.size()) {
+      } else if (i + 1 == cluster.mean.size()) {
         heading = atan2(cluster.mean[i][1] - cluster.mean[i - 1][1], cluster.mean[i][0] - cluster.mean[i - 1][0]);
       } else {
         heading =
@@ -94,7 +96,6 @@ void GMMTMap::readFromXML(const std::string &fileName) {
   }
 
   this->computeHeadingAndConstructRTree();
-  BOOST_LOG_TRIVIAL(info) << "Read a GMMT-map with " << this->M_ << " clusters each containing " << this->K_
-                          << " gaussians";
+  MOD_LOG("Read a GMMT-map with %d clusters of %d gaussians each from %s", M_, K_, fileName.c_str());
 }
 }  // namespace MoD

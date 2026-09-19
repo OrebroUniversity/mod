@@ -20,14 +20,8 @@
 #pragma once
 
 #include <array>
-#include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/iteration_macros.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/property_map/property_map.hpp>
 #include <cmath>
+#include <memory>
 #include <mod/base.hpp>
 #include <vector>
 
@@ -57,14 +51,23 @@ class IntensityMap : public Base {
   inline size_t getColumns() const { return columns_; }
   inline double getCellSize() const { return cell_size_; }
 
-  IntensityMap(const IntensityMap &intensityMap);
+  IntensityMap(const IntensityMap &intensityMap) = default;
+  IntensityMap &operator=(const IntensityMap &) = default;
   virtual ~IntensityMap() = default;
 
+  /// Value of the cell containing (x, y); 0 outside the map.
   inline double operator()(double x, double y) const {
-    auto row = size_t(std::floor(y - this->y_min_) / this->cell_size_);
-    auto col = size_t(std::floor(x - this->x_min_) / this->cell_size_);
+    const double fr = std::floor((y - this->y_min_) / this->cell_size_);
+    const double fc = std::floor((x - this->x_min_) / this->cell_size_);
+    if (fr < 0.0 || fc < 0.0) return 0.0;
+    const auto row = static_cast<size_t>(fr);
+    const auto col = static_cast<size_t>(fc);
+    if (row >= rows_ || col >= columns_) return 0.0;
     return this->values_[row * this->columns_ + col];
   }
+
+  /// Raw cell value by row-major index.
+  inline double valueAt(size_t index) const { return values_[index]; }
 
   inline std::array<double, 2> getXYatIndex(size_t index) const {
     size_t col = index % this->columns_;
@@ -152,8 +155,8 @@ class CLiFFMap : public Base {
 
   inline double index2x(size_t col) const { return (((double)col * resolution_) + x_min_); }
   inline double index2y(size_t row) const { return (((double)row * resolution_) + y_min_); }
-  inline size_t x2index(double x) const { return std::round((x - x_min_) / resolution_); }
-  inline size_t y2index(double y) const { return std::round((y - y_min_) / resolution_); }
+  inline size_t x2index(double x) const { return static_cast<size_t>(std::round((x - x_min_) / resolution_)); }
+  inline size_t y2index(double y) const { return static_cast<size_t>(std::round((y - y_min_) / resolution_)); }
 
   CLiFFMap() = default;
 
@@ -172,9 +175,12 @@ class CLiFFMap : public Base {
   /**
    * Get the CLiFFMapLocation at (row,col). Need to call organizeAsGrid() first.
    */
-  CLiFFMapLocation at(size_t row, size_t col) const;
-  CLiFFMapLocation atId(size_t id) const;
-  CLiFFMapLocation operator()(double x, double y) const;
+  /// Returns a reference to a static empty location when (row, col) is out of range. The reference stays valid
+  /// as long as the map lives and is stable across calls.
+  const CLiFFMapLocation &at(size_t row, size_t col) const;
+  /// Location by its 1-based XML id; static empty location when out of range.
+  const CLiFFMapLocation &atId(size_t id) const;
+  const CLiFFMapLocation &operator()(double x, double y) const;
   double getLikelihood(double x, double y, double heading, double speed) const;
   double getBestHeading(double x, double y) const;
 
@@ -193,6 +199,8 @@ class CLiFFMap : public Base {
 
 typedef std::shared_ptr<CLiFFMap> CLiFFMapPtr;
 typedef std::shared_ptr<const CLiFFMap> CLiFFMapConstPtr;
+typedef std::shared_ptr<IntensityMap> IntensityMapPtr;
+typedef std::shared_ptr<const IntensityMap> IntensityMapConstPtr;
 
 }  // namespace MoD
 

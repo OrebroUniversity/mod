@@ -18,88 +18,21 @@
 
 #include <ompl/mod/objectives/IntensityMapOptimizationObjective.h>
 
-#include <Eigen/Dense>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <cmath>
+#include <stdexcept>
 
-namespace ompl {
-namespace MoD {
+namespace ompl::MoD {
 
 IntensityMapOptimizationObjective::IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                                                     const std::string &file_name,
-                                                                     double wd,
-                                                                     double wq,
-                                                                     double wc,
-                                                                     std::string sampler_type,
-                                                                     double sampler_bias,
-                                                                     bool uniform_valid,
-                                                                     bool sampler_debug)
-    : ompl::MoD::MoDOptimizationObjective(si,
-                                          wd,
-                                          wq,
-                                          wc,
-                                          MapType::IntensityMap,
-                                          sampler_type,
-                                          file_name,
-                                          sampler_bias,
-                                          uniform_valid,
-                                          sampler_debug) {
-  this->intensity_map_ = ::MoD::IntensityMap(file_name);
+                                                                     const ::MoD::OptObjParameters &params,
+                                                                     const ::MoD::SamplerParameters &sampler_params,
+                                                                     ::MoD::IntensityMapConstPtr intensity_map)
+    : MoDOptimizationObjective(si, params, sampler_params, MapType::IntensityMap, std::move(intensity_map)) {
+  if (!intensity_map_) throw std::invalid_argument("IntensityMapOptimizationObjective: no intensity map given");
   description_ = "Intensity Cost";
-  // Setup a default cost-to-go heuristic:
-  setCostToGoHeuristic(ompl::base::goalRegionCostToGo);
 }
 
-ompl::base::Cost IntensityMapOptimizationObjective::stateCost(const ompl::base::State *s) const {
-  return ompl::base::Cost(0.0);
+double IntensityMapOptimizationObjective::modCost(double x, double y, double /*alpha*/) const {
+  return (*intensity_map_)(x, y);
 }
 
-ompl::base::Cost IntensityMapOptimizationObjective::motionCostHeuristic(const ompl::base::State *s1,
-                                                                        const ompl::base::State *s2) const {
-  return motionCost(s1, s2);
-}
-
-ompl::base::Cost IntensityMapOptimizationObjective::motionCost(const ompl::base::State *s1,
-                                                               const ompl::base::State *s2) const {
-  auto space = si_->getStateSpace();
-  // 1. Declare the intermediate states.
-  std::vector<ompl::base::State *> intermediate_states;
-
-  // 2. How many segments do we want. Each segment should be approximately the
-  // size of resolution.
-  unsigned int numSegments = space->validSegmentCount(s1, s2);
-
-  // 3. Get intermediate states.
-  si_->getMotionStates(s1, s2, intermediate_states, numSegments - 1, true, true);
-
-  double total_cost = 0.0;
-  this->last_cost_.cost_d_ = 0.0;
-  this->last_cost_.cost_q_ = 0.0;
-  this->last_cost_.cost_c_ = 0.0;
-
-  for (unsigned int i = 0; i < intermediate_states.size() - 1; i++) {
-    std::array<double, 3> state_a{*space->getValueAddressAtIndex(intermediate_states[i], 0),
-                                  *space->getValueAddressAtIndex(intermediate_states[i], 1),
-                                  *space->getValueAddressAtIndex(intermediate_states[i], 2)};
-    std::array<double, 3> state_b{*space->getValueAddressAtIndex(intermediate_states[i + 1], 0),
-                                  *space->getValueAddressAtIndex(intermediate_states[i + 1], 1),
-                                  *space->getValueAddressAtIndex(intermediate_states[i + 1], 2)};
-
-    double dot = cos(state_b[2] / 2.0) * cos(state_a[2] / 2.0) + sin(state_b[2] / 2.0) * sin(state_a[2] / 2.0);
-
-    double cost_d = si_->distance(intermediate_states[i], intermediate_states[i + 1]);
-    double cost_q = (1.0 - dot * dot);
-    double cost_c = intensity_map_(state_b[0], state_b[1]);
-
-    total_cost += (weight_d_ * cost_d) + (weight_q_ * cost_q) + (weight_c_ * cost_c);
-    this->last_cost_.cost_c_ += cost_c;
-    this->last_cost_.cost_d_ += cost_d;
-    this->last_cost_.cost_q_ += cost_q;
-    si_->freeState(intermediate_states[i]);
-  }
-  si_->freeState(intermediate_states[intermediate_states.size() - 1]);
-  return ompl::base::Cost(total_cost);
-}
-}  // namespace MoD
-}  // namespace ompl
+}  // namespace ompl::MoD

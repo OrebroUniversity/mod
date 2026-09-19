@@ -20,39 +20,24 @@
 
 #include <ompl/mod/objectives/MoDOptimizationObjective.h>
 
-#include <Eigen/Dense>
-#include <array>
-#include <functional>
 #include <mod/cliffmap.hpp>
 
 namespace ompl::MoD {
 
+/// Intensity cost: the q value of the intensity map at the point, independent of the motion direction.
 class IntensityMapOptimizationObjective : public MoDOptimizationObjective {
  protected:
-  ::MoD::IntensityMap intensity_map_;
+  double modCost(double x, double y, double alpha) const override;
 
  public:
-  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                    const std::string &file_name,
-                                    double wd,
-                                    double wq,
-                                    double wc,
-                                    std::string sampler_type,
-                                    double sampler_bias,
-                                    bool uniform_valid,
-                                    bool sampler_debug);
+  /// The map is loaded from `params.intensity_map_file` unless given preloaded.
+  IntensityMapOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ::MoD::OptObjParameters &params,
+                                    const ::MoD::SamplerParameters &sampler_params,
+                                    ::MoD::IntensityMapConstPtr intensity_map = nullptr);
 
   ~IntensityMapOptimizationObjective() override = default;
-
-  inline bool isSymmetric() const override { return false; }
-
-  ompl::base::Cost stateCost(const ompl::base::State *s) const override;
-
-  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
-
-  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 };
 
 typedef std::shared_ptr<IntensityMapOptimizationObjective> IntensityMapOptimizationObjectivePtr;
 
-}  // namespace ompl
+}  // namespace ompl::MoD

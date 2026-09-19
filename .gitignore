@@ -33,3 +33,12 @@
 *.exe
 *.out
 *.app
+# Build
+build/
+cmake-build-*/
+.cache/
+compile_commands.json
+__pycache__/
+*.pyc
+logs/
+runs/

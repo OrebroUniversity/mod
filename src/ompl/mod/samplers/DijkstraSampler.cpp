@@ -18,310 +18,144 @@
 
 #include <ompl/base/OptimizationObjective.h>
 #include <ompl/base/SpaceInformation.h>
-#include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/mod/samplers/DijkstraSampler.h>
 
-#include <utility>
+#include <algorithm>
+#include <boost/math/constants/constants.hpp>
+#include <chrono>
+#include <cmath>
+#include <mod/log.hpp>
 
 namespace ompl::MoD {
-DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls, double cell_size,
-                                 double bias, bool debug)
-    : ompl::base::InformedSampler(pdef, maxCalls), bias_(bias), debug_(debug) {
-  this->props_.cell_size = cell_size;
 
-  start_ = {(probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getX(),
-            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getY(),
-            (probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>())->getYaw()};
+DijkstraSampler::DijkstraSampler(const ompl::base::ProblemDefinitionPtr &pdef, unsigned int maxCalls,
+                                 const ::MoD::SamplerParameters &params, ::MoD::IntensityMapConstPtr /*intensity_map*/)
+    : ompl::base::InformedSampler(pdef, maxCalls), bias_(params.bias), cell_size_(params.dijkstra_cell_size) {
+  const auto *s = probDefn_->getStartState(0)->as<ompl::base::SE2StateSpace::StateType>();
+  start_ = {s->getX(), s->getY(), s->getYaw()};
 
-  ompl::base::State *goal_state = probDefn_->getGoal()->as<ompl::base::GoalState>()->getState();
-  goal_ = {(goal_state->as<ompl::base::SE2StateSpace::StateType>())->getX(),
-           (goal_state->as<ompl::base::SE2StateSpace::StateType>())->getY(),
-           (goal_state->as<ompl::base::SE2StateSpace::StateType>())->getYaw()};
+  const auto *g =
+      probDefn_->getGoal()->as<ompl::base::GoalState>()->getState()->as<ompl::base::SE2StateSpace::StateType>();
+  goal_ = {g->getX(), g->getY(), g->getYaw()};
 
   setup();
-
-  if (debug_) {
-    sampledPosesFile_.open(
-        "/home/ksatyaki/samples-dijkstra-" + pdef->getOptimizationObjective()->getDescription() + ".csv",
-        std::fstream::out);
-    if (sampledPosesFile_.is_open()) {
-      OMPL_INFORM("Debug Enabled.");
-      sampledPosesFile_ << "x,y,choice" << std::endl;
-    } else {
-      OMPL_INFORM("Couldn't open file for debug.");
-    }
-  } else {
-    OMPL_INFORM("Debug disabled.");
-  }
 }
 
-double DijkstraSampler::getCost(double xi, double yi, double xf, double yf) {
-  ompl::base::State *first = probDefn_->getSpaceInformation()->allocState();
-  ompl::base::State *next = probDefn_->getSpaceInformation()->allocState();
-
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setX(xi);
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setY(yi);
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
-
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setX(xf);
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setY(yf);
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
-
-  auto cost = opt_->motionCost(first, next).value();
-
-  probDefn_->getSpaceInformation()->freeState(first);
-  probDefn_->getSpaceInformation()->freeState(next);
-
-  return cost;
-}
-
-bool DijkstraSampler::checkValidity(double xi, double yi, double xf, double yf) {
-  ompl::base::State *first = probDefn_->getSpaceInformation()->allocState();
-  ompl::base::State *next = probDefn_->getSpaceInformation()->allocState();
-
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setX(xi);
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setY(yi);
-  (first->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
-
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setX(xf);
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setY(yf);
-  (next->as<ompl::base::SE2StateSpace::StateType>())->setYaw(atan2(yf - yi, xf - xi));
-
-  auto checker = probDefn_->getSpaceInformation()->getStateValidityChecker();
-  bool valid = true;
-  if (checker != nullptr) {
-    valid = checker->isValid(first) && checker->isValid(next);
-  } else {
-    std::cout << "SHITE";
-  }
-  probDefn_->getSpaceInformation()->freeState(first);
-  probDefn_->getSpaceInformation()->freeState(next);
-
-  return valid;
-}
-
-bool DijkstraSampler::checkValidity(size_t row_i, size_t col_i, size_t row_f, size_t col_f) {
-  return checkValidity(colToX(col_i), rowToY(row_i), colToX(col_f), rowToY(row_f));
-}
-
-double DijkstraSampler::getCost(size_t row_i, size_t col_i, size_t row_f, size_t col_f) {
-  return getCost(colToX(col_i), rowToY(row_i), colToX(col_f), rowToY(row_f));
-}
-
-double DijkstraSampler::distance(size_t row_i, size_t col_i, size_t row_f, size_t col_f) {
-  double xi = colToX(col_i);
-  double yi = rowToY(row_i);
-  double xf = colToX(col_f);
-  double yf = rowToY(row_f);
-
-  return sqrt((xi - xf) * (xi - xf)) + ((yi - yf) * (yi - yf));
-}
-
-void DijkstraSampler::addEdgeAndWeight(size_t row_i, size_t col_i, size_t row_f, size_t col_f) {
-  if (!checkValidity(row_i, col_i, row_f, col_f)) return;
-
-  edges_.emplace_back(row_i * this->props_.cols + col_i, row_f * this->props_.cols + col_f);
-  weights_.push_back(getCost(row_i, col_i, row_f, col_f));
-  // weights_.push_back(distance(row_i, col_i, row_f, col_f));
+double DijkstraSampler::edgeCost(size_t from, size_t to, ompl::base::State *a, ompl::base::State *b) const {
+  const double xi = grid_->x(from), yi = grid_->y(from);
+  const double xf = grid_->x(to), yf = grid_->y(to);
+  const double heading = std::atan2(yf - yi, xf - xi);
+  auto *sa = a->as<ompl::base::SE2StateSpace::StateType>();
+  auto *sb = b->as<ompl::base::SE2StateSpace::StateType>();
+  sa->setX(xi);
+  sa->setY(yi);
+  sa->setYaw(heading);
+  sb->setX(xf);
+  sb->setY(yf);
+  sb->setYaw(heading);
+  return opt_->motionCost(a, b).value();
 }
 
 void DijkstraSampler::setup() {
-  const ompl::base::RealVectorBounds state_bounds =
-      probDefn_->getSpaceInformation()->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
-  const auto x_min = state_bounds.low[0];
-  const auto x_max = state_bounds.high[0];
-  const auto y_min = state_bounds.low[1];
-  const auto y_max = state_bounds.high[1];
+  const auto t0 = std::chrono::steady_clock::now();
+  const auto si = probDefn_->getSpaceInformation();
+  const ompl::base::RealVectorBounds bounds = si->getStateSpace()->as<ompl::base::SE2StateSpace>()->getBounds();
+  x_min_ = bounds.low[0];
+  x_max_ = bounds.high[0];
+  y_min_ = bounds.low[1];
+  y_max_ = bounds.high[1];
 
-  auto cols = static_cast<size_t>((x_max - x_min) / this->props_.cell_size) + 1u;
-  auto rows = static_cast<size_t>((y_max - y_min) / this->props_.cell_size) + 1u;
-  auto num_nodes = rows * cols;
+  grid_ = std::make_unique<::MoD::GridDijkstra>(x_min_, x_max_, y_min_, y_max_, cell_size_);
+  MOD_LOG("DijkstraSampler: bias %.3f, cell %.3f m, grid %zu x %zu", bias_, cell_size_, grid_->rows(),
+          grid_->cols());
 
-  // Total edges are eight per cell - 5 missing per corner - 3 missing along the edges of the map.
-  size_t total_edges = (rows * cols * 8) - 20 - (3 * 2 * (cols - 2)) - (3 * 2 * (rows - 2));
-
-  this->props_ = props(this->props_.cell_size, x_min, x_max, y_min, y_max, rows, cols, total_edges);
-  BOOST_LOG_TRIVIAL(info) << "Properties: " << std::endl
-                          << "Bias: " << this->bias_ << std::endl
-                          << "Cell size: " << this->props_.cell_size;
-
-  for (size_t row = 0; row < rows; row++) {
-    for (size_t col = 0; col < cols; col++) {
-      if (row == 0 and col == 0) {
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-        addEdgeAndWeight(row, col, (row + 1), (col + 1));
-      } else if (row == 0 and col == cols - 1) {
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-      } else if (row == rows - 1 and col == 0) {
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row - 1), (col + 1));
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-      } else if (row == rows - 1 and col == cols - 1) {
-        addEdgeAndWeight(row, col, (row - 1), (col - 1));
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-      } else if (row == 0) {
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-        addEdgeAndWeight(row, col, (row + 1), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-        addEdgeAndWeight(row, col, (row + 1), (col + 1));
-      } else if (col == 0) {
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row - 1), (col + 1));
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-        addEdgeAndWeight(row, col, (row + 1), (col + 1));
-      } else if (row == rows - 1) {
-        addEdgeAndWeight(row, col, (row - 1), (col - 1));
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row - 1), (col + 1));
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-      } else if (col == cols - 1) {
-        addEdgeAndWeight(row, col, (row - 1), (col - 1));
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-      } else {
-        addEdgeAndWeight(row, col, (row - 1), (col - 1));
-        addEdgeAndWeight(row, col, (row - 1), (col - 0));
-        addEdgeAndWeight(row, col, (row - 1), (col + 1));
-        addEdgeAndWeight(row, col, (row + 0), (col - 1));
-        addEdgeAndWeight(row, col, (row + 0), (col + 1));
-        addEdgeAndWeight(row, col, (row + 1), (col - 1));
-        addEdgeAndWeight(row, col, (row + 1), (col + 0));
-        addEdgeAndWeight(row, col, (row + 1), (col + 1));
-      }
-    }
+  // Validity: one check per node at yaw 0 (the footprint is a circle, so yaw is irrelevant).
+  ompl::base::State *probe = si->allocState();
+  const auto checker = si->getStateValidityChecker();
+  if (checker) {
+    grid_->computeValidity([&](double x, double y) {
+      auto *p = probe->as<ompl::base::SE2StateSpace::StateType>();
+      p->setX(x);
+      p->setY(y);
+      p->setYaw(0.0);
+      return checker->isValid(probe);
+    });
+  } else {
+    MOD_LOG("DijkstraSampler: no state validity checker set, every cell is treated as valid");
   }
+  si->freeState(probe);
 
-  if (edges_.size() != this->props_.total_edges) {
-    BOOST_LOG_TRIVIAL(info) << "Surely, the number of edges has reduced due to invalid ones not being added. We added: "
-                            << edges_.size() << " edges and " << weights_.size() << " weights, but would have added "
-                            << total_edges << " if we considered the bad apples.";
+  ompl::base::State *a = si->allocState();
+  ompl::base::State *b = si->allocState();
+  grid_->setWeight([this, a, b](size_t from, size_t to) { return edgeCost(from, to, a, b); });
+
+  const size_t start_node = grid_->nodeAt(start_[0], start_[1]);
+  const size_t goal_node = grid_->nodeAt(goal_[0], goal_[1]);
+  MOD_LOG("DijkstraSampler: start cell (%zu, %zu) = (%.2f, %.2f), goal cell (%zu, %zu) = (%.2f, %.2f)",
+          grid_->row(start_node), grid_->col(start_node), start_[0], start_[1], grid_->row(goal_node),
+          grid_->col(goal_node), goal_[0], goal_[1]);
+
+  grid_->setRoot(start_node, ::MoD::GridDijkstra::Mode::forward);
+  const double cost = grid_->costTo(goal_node);
+  path_ = grid_->pathTo(goal_node);
+  si->freeState(a);
+  si->freeState(b);
+
+  const double ms =
+      std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+  if (path_.empty()) {
+    MOD_LOG("DijkstraSampler: no path from start to goal; only the uniform branch will be used");
+  } else {
+    MOD_LOG("DijkstraSampler: path of %zu nodes, cost %.3f", path_.size(), cost);
   }
-
-  SamplingGraph graph_(edges_.begin(), edges_.end(), weights_.begin(), num_nodes);
-
-  std::vector<SamplingGraphVertexDescriptor> p(boost::num_vertices(graph_));
-  std::vector<size_t> d(boost::num_vertices(graph_));
-
-  BOOST_LOG_TRIVIAL(info) << "Vertices in the graph are: " << boost::num_vertices(graph_);
-  BOOST_LOG_TRIVIAL(info) << "Total vertices would have been " << rows * cols;
-  BOOST_LOG_TRIVIAL(info) << "Rows = " << rows << ", Cols = " << cols;
-
-  // Find out where the start and goal are in terms of row, col.
-  auto start_row = static_cast<size_t>((this->start_[1] - y_min) / this->props_.cell_size);
-  auto start_col = static_cast<size_t>((this->start_[0] - x_min) / this->props_.cell_size);
-  auto goal_row = static_cast<size_t>((this->goal_[1] - y_min) / this->props_.cell_size);
-  auto goal_col = static_cast<size_t>((this->goal_[0] - x_min) / this->props_.cell_size);
-
-  BOOST_LOG_TRIVIAL(info) << "Start: (" << start_row << ", " << start_col << ") = (" << this->start_[0] << ", "
-                          << this->start_[1] << ")";
-  BOOST_LOG_TRIVIAL(info) << "Goal: (" << goal_row << ", " << goal_col << ") = (" << this->goal_[0] << ", "
-                          << this->goal_[1] << ")";
-  SamplingGraphVertexDescriptor sVertexDescriptor = boost::vertex(start_row * this->props_.cols + start_col, graph_);
-  SamplingGraphVertexDescriptor gVertexDescriptor = boost::vertex(goal_row * this->props_.cols + goal_col, graph_);
-
-  boost::dijkstra_shortest_paths(
-      graph_, sVertexDescriptor,
-      boost::predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, graph_)))
-          .distance_map(boost::make_iterator_property_map(d.begin(), boost::get(boost::vertex_index, graph_))));
-
-  BOOST_LOG_TRIVIAL(info) << "Ran Dijkstra...";
-  path_.clear();
-  SamplingGraphVertexDescriptor current = gVertexDescriptor;
-  SamplingGraphVertexDescriptor prev;
-  while (current != sVertexDescriptor) {
-    prev = current;
-    path_.emplace_front(current);
-    current = p[current];
-    if (prev == current) {
-      BOOST_LOG_TRIVIAL(error) << "Dijkstra Sampler failed to find a path!";
-      return;
-    }
-  }
-  path_.emplace_front(sVertexDescriptor);
-
-  double x_prev{0.0};
-  double y_prev{0.0};
-  SamplingGraphVertexDescriptorIterator it;
-  double cost = 0.0;
-  for (it = path_.begin(); it != path_.end(); ++it) {
-    size_t col = (*it) % this->props_.cols;
-    size_t row = static_cast<size_t>((*it) / this->props_.cols);
-
-    double x_this = colToX(col);
-    double y_this = rowToY(row);
-
-    if (it != path_.begin()) cost += getCost(x_prev, y_prev, x_this, y_this);
-
-    x_prev = x_this;
-    y_prev = y_this;
-  }
-  BOOST_LOG_TRIVIAL(info) << "Found a path: " << path_.size() << " nodes... "
-                          << "Cost: " << cost;
+  MOD_LOG("DijkstraSampler: setup %.1f ms, %zu nodes (%zu valid), %zu settled, %zu edges evaluated", ms,
+          grid_->size(), grid_->validCount(), grid_->settledCount(), grid_->evaluatedEdges());
 }
 
-bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::Cost &cost) {
+bool DijkstraSampler::sampleUniform(ompl::base::State *state, const ompl::base::Cost & /*cost*/) {
   size_t sampled_col = 0;
   size_t sampled_row = 0;
   double sampled_theta;
+  const double pi = boost::math::constants::pi<double>();
 
-  double randomValue = rng_.uniformReal(0.0, 1.0);
-  bool uniform = false;
+  const double randomValue = rng_.uniformReal(0.0, 1.0);
   // At a bias_ % probability, choose a row, col from the dijkstra path
-  if (randomValue < bias_) {
-    uniform = false;
-    auto idx = rng_.uniformInt(0, this->path_.size() - 1);
-    auto iter = path_.begin();
-    std::advance(iter, idx);
-    sampled_col = (*iter) % this->props_.cols;
-    sampled_row = static_cast<size_t>((*iter) / this->props_.cols);
+  const bool biased = randomValue < bias_ && !path_.empty();
+  if (biased) {
+    const auto idx = static_cast<size_t>(rng_.uniformInt(0, static_cast<int>(path_.size()) - 1));
+    const size_t node = path_[idx];
+    sampled_col = grid_->col(node);
+    sampled_row = grid_->row(node);
 
-    if (idx == this->path_.size() - 1) {
-      auto prev_iter = path_.begin();
-      std::advance(iter, idx - 1);
-      size_t prev_col = (*prev_iter) % this->props_.cols;
-      size_t prev_row = static_cast<size_t>((*prev_iter) / this->props_.cols);
-      sampled_theta = atan2(rowToY(sampled_row) - rowToY(prev_row), colToX(sampled_col) - colToX(prev_col));
+    // Heading: towards the next path cell; the last cell looks back from the previous cell (Paper IV, step 3).
+    if (idx == path_.size() - 1) {
+      const size_t prev = path_[idx - 1];
+      sampled_theta = std::atan2(grid_->y(node) - grid_->y(prev), grid_->x(node) - grid_->x(prev));
     } else {
-      auto next_iter = path_.begin();
-      std::advance(iter, idx + 1);
-      size_t next_col = (*next_iter) % this->props_.cols;
-      size_t next_row = static_cast<size_t>((*next_iter) / this->props_.cols);
-      sampled_theta = atan2(-rowToY(sampled_row) + rowToY(next_row), -colToX(sampled_col) + colToX(next_col));
+      const size_t next = path_[idx + 1];
+      sampled_theta = std::atan2(grid_->y(next) - grid_->y(node), grid_->x(next) - grid_->x(node));
     }
-
-    sampled_theta = rng_.uniformReal(sampled_theta - (boost::math::constants::pi<double>() / 8.0),
-                                     sampled_theta + (boost::math::constants::pi<double>() / 8.0));
-
+    sampled_theta = rng_.uniformReal(sampled_theta - pi / 8.0, sampled_theta + pi / 8.0);
   } else {
-    uniform = true;
-    sampled_col = rng_.uniformInt(0, this->props_.cols - 1);
-    sampled_row = rng_.uniformInt(0, this->props_.rows - 1);
-    sampled_theta = rng_.uniformReal(-boost::math::constants::pi<double>(), boost::math::constants::pi<double>());
+    sampled_col = static_cast<size_t>(rng_.uniformInt(0, static_cast<int>(grid_->cols()) - 1));
+    sampled_row = static_cast<size_t>(rng_.uniformInt(0, static_cast<int>(grid_->rows()) - 1));
+    sampled_theta = rng_.uniformReal(-pi, pi);
   }
 
-  double sampled_x = rng_.uniformReal(colToX(sampled_col) - this->props_.cell_size / 2.0,
-                                      colToX(sampled_col) + this->props_.cell_size / 2.0);
-  double sampled_y = rng_.uniformReal(rowToY(sampled_row) - this->props_.cell_size / 2.0,
-                                      rowToY(sampled_row) + this->props_.cell_size / 2.0);
+  const double half = cell_size_ / 2.0;
+  double sampled_x = rng_.uniformReal(colToX(sampled_col) - half, colToX(sampled_col) + half);
+  double sampled_y = rng_.uniformReal(rowToY(sampled_row) - half, rowToY(sampled_row) + half);
+  sampled_x = std::clamp(sampled_x, x_min_, x_max_);
+  sampled_y = std::clamp(sampled_y, y_min_, y_max_);
 
-  (state->as<ompl::base::SE2StateSpace::StateType>())->setX(sampled_x);
-  (state->as<ompl::base::SE2StateSpace::StateType>())->setY(sampled_y);
-  (state->as<ompl::base::SE2StateSpace::StateType>())->setYaw(sampled_theta);
-
-  if (debug_) {
-    sampledPosesFile_ << sampled_x << "," << sampled_y << "," << (uniform ? "uniform" : "intensity") << std::endl;
-    sampledPosesFile_.flush();
-  }
+  auto *se2 = state->as<ompl::base::SE2StateSpace::StateType>();
+  se2->setX(sampled_x);
+  se2->setY(sampled_y);
+  se2->setYaw(sampled_theta);
+  if (sink_)
+    sink_->record(sampled_x, sampled_y, sampled_theta,
+                  biased ? ::MoD::SampleSource::dijkstra : ::MoD::SampleSource::uniform);
   return true;
 }
 

@@ -1,0 +1,26 @@
+{
+  "log_dir": "../../../runs/atc_smoke",
+  "threads": 4,
+  "repeats": 2,
+  "seed0": 1,
+  "vehicle": {"shape": "rectangle", "length": 0.7, "width": 0.4, "state_space": "dubins", "turning_radius": 1.0},
+  "scenarios": [
+    {"name": "atc-scenario1-rev", "map_yaml": "atc.yaml", "start": [-19.575, 12.390, -0.84], "goal": [47.690, -18.848, 0.84]},
+    {"name": "atc-scenario2-rev", "map_yaml": "atc.yaml", "start": [-3.85, -6.82, 2.3], "goal": [21.471, -17.647, -2.3]},
+    {"name": "atc-scenario1", "map_yaml": "atc.yaml", "start": [47.690, -18.848, -2.356], "goal": [-19.575, 12.390, 2.313]},
+    {"name": "atc-scenario2", "map_yaml": "atc.yaml", "start": [21.471, -17.647, 0.733], "goal": [-3.85, -6.82, -0.8203]},
+    {"name": "atc-scenario3", "map_yaml": "atc.yaml", "start": [-0.133, -8.555, 2.604], "goal": [31.093, -20.553, -1.999]},
+    {"name": "atc-scenario4", "map_yaml": "atc.yaml", "start": [11.5, -5.0, 2.604], "goal": [-25.00, 3.00, -1.999]}
+  ],
+  "planners": [
+    {"type": "rrt_star", "max_planning_time": 10.0},
+    {"type": "ait_star", "max_planning_time": 10.0}
+  ],
+  "samplers": [
+    {"type": "iid", "intensity_map_file": "atc_intensity1m.xml"},
+    {"type": "dijkstra", "bias": 0.05, "dijkstra_cell_size": 0.5, "intensity_map_file": "atc_intensity1m.xml"}
+  ],
+  "objectives": [
+    {"type": "cliff", "w_c": 0.1, "cliff_map_file": "atc_cliff.xml", "intensity_map_file": "atc_intensity1m.xml"}
+  ]
+}

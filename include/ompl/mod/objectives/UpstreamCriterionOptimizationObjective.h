@@ -25,66 +25,37 @@
 
 namespace ompl::MoD {
 
-class UpstreamCriterionOptimizationObjective : public ompl::MoD::MoDOptimizationObjective {
-  ::MoD::GMMTMapPtr gmmtmap;
+/**
+ * Upstream criterion: `sum_k pi_k (1 - cos(alpha - theta_k))` over the flow components at the point, from a
+ * CLiFF-map (scaled by intensity q if an intensity map is given) or a GMMT-map (`params.type == gmmt`).
+ * STeF-map support is not implemented (remnants kept as in the original).
+ */
+class UpstreamCriterionOptimizationObjective : public MoDOptimizationObjective {
+  ::MoD::GMMTMapConstPtr gmmtmap_;
+  ::MoD::CLiFFMapConstPtr cliffmap_;
 
-  ::MoD::CLiFFMapPtr cliffmap;
-
-  ::MoD::IntensityMap intensitymap;
-
-  bool use_intensity{false};
+ protected:
+  double modCost(double x, double y, double alpha) const override;
 
  public:
-  /** @todo : STeF Support
-  UpstreamCriterionOptimizationObjective(
-      const ompl::base::SpaceInformationPtr &si,
-      const ::MoD::STeFMap &stefmap, float wd, float wq, float wc);
-  */
-
+  /// `params.type` selects the map: `gmmt` -> `gmmt_map_file`, anything else -> `cliff_map_file`.
+  /// Maps are loaded from the files unless given preloaded.
   UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                         const ::MoD::GMMTMap &gmmtmap,
-                                         float wd,
-                                         float wq,
-                                         float wc,
-                                         const std::string &sampler_type,
-                                         const std::string &intensity_map_file_name,
-                                         double bias,
-                                         bool uniform_valid,
-                                         bool debug);
-
-  UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si,
-                                         const ::MoD::CLiFFMap &cliffmap,
-                                         const std::string &intensity_map_file_name,
-                                         double wd,
-                                         double wq,
-                                         double wc,
-                                         const std::string &sampler_type,
-                                         double bias,
-                                         bool uniform_valid,
-                                         bool debug);
-
-  UpstreamCriterionOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ompl::MoD::MapType &map_type,
-                                         const std::string &map_file_name, float wd, float wq, float wc,
-                                         const std::string &sampler_type, const std::string &intensity_map_file_name,
-                                         double bias, bool uniform_valid, bool debug);
-
-  inline bool isSymmetric() const override { return false; }
-
-  ompl::base::Cost stateCost(const ompl::base::State *s) const override;
-
-  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
-
-  // double getSTeFMapCost(double x, double y, double alpha) const;
-
-  double getGMMTMapCost(double x, double y, double alpha) const;
-
-  double getCLiFFMapCost(double x, double y, double alpha) const;
-
-  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
+                                         const ::MoD::OptObjParameters &params,
+                                         const ::MoD::SamplerParameters &sampler_params,
+                                         ::MoD::CLiFFMapConstPtr cliffmap = nullptr,
+                                         ::MoD::GMMTMapConstPtr gmmtmap = nullptr,
+                                         ::MoD::IntensityMapConstPtr intensity_map = nullptr);
 
   ~UpstreamCriterionOptimizationObjective() override = default;
+
+  double getGMMTMapCost(double x, double y, double alpha) const;
+  double getCLiFFMapCost(double x, double y, double alpha) const;
+
+  inline const ::MoD::CLiFFMapConstPtr &getCLiFFMap() const { return cliffmap_; }
+  inline const ::MoD::GMMTMapConstPtr &getGMMTMap() const { return gmmtmap_; }
 };
 
 typedef std::shared_ptr<UpstreamCriterionOptimizationObjective> UpstreamCriterionOptimizationObjectivePtr;
 
-} /* namespace ompl */
+}  // namespace ompl::MoD

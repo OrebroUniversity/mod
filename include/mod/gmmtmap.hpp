@@ -21,12 +21,11 @@
 
 #include <Eigen/Core>
 #include <array>
-#include <boost/chrono.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
-#include <boost/log/trivial.hpp>
 #include <mod/base.hpp>
+#include <mod/log.hpp>
 #include <vector>
 
 namespace MoD {
@@ -120,29 +119,24 @@ class GMMTMap : public Base {
    * @param cluster_id The index of the cluster.
    * @return The mixing factor for that cluster.
    */
-  inline double getMixingFactorByClusterID(size_t cluster_idx) {
+  inline double getMixingFactorByClusterID(size_t cluster_idx) const {
     if (cluster_idx >= this->clusters_.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getMixingFactorByClusterID() called with "
-                                  "cluster_id >= number of clusters.";
+      MOD_LOG("GMMTMap::getMixingFactorByClusterID: cluster %zu >= %zu clusters", cluster_idx, clusters_.size());
       return 1.0;
     }
 
     return this->clusters_[cluster_idx].mixing_factor;
   }
 
-  inline double getHeadingAtDist(size_t cluster_idx, size_t mean_idx) {
+  inline double getHeadingAtDist(size_t cluster_idx, size_t mean_idx) const {
     if (cluster_idx >= this->clusters_.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with cluster_idx "
-                                  ">= number of clusters.";
-      BOOST_LOG_TRIVIAL(error) << "Total clusters: " << this->clusters_.size() << ", Cluster ID: " << cluster_idx;
+      MOD_LOG("GMMTMap::getHeadingAtDist: cluster %zu >= %zu clusters", cluster_idx, clusters_.size());
       return 0.0;
     }
 
     if (mean_idx >= this->clusters_[cluster_idx].heading.size()) {
-      BOOST_LOG_TRIVIAL(error) << "getHeadingAtDist() called with mean_idx >= "
-                                  "number of traj-means in cluster.";
-      BOOST_LOG_TRIVIAL(error) << "Total means: " << this->clusters_[cluster_idx].heading.size()
-                               << ", Cluster ID and Mean ID: " << cluster_idx << ", " << mean_idx;
+      MOD_LOG("GMMTMap::getHeadingAtDist: mean %zu >= %zu means in cluster %zu", mean_idx,
+              clusters_[cluster_idx].heading.size(), cluster_idx);
       return 0.0;
     }
 
@@ -162,6 +156,12 @@ class GMMTMap : public Base {
 
   /// A vector containing all the clusters (motion patterns).
   std::vector<GMMTMapCluster> clusters_;
+
+ public:
+  /// All motion patterns (cluster polylines with mixing factors and headings).
+  inline const std::vector<GMMTMapCluster> &getClusters() const { return clusters_; }
+
+ protected:
 
   /// A tree used for
   bgi::rtree<TreeValue, bgi::quadratic<16>> rtree_;

@@ -19,137 +19,106 @@
 #pragma once
 
 #include <ompl/base/OptimizationObjective.h>
-#include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
-#include <ompl/base/samplers/informed/PathLengthDirectInfSampler.h>
 
-#include <boost/log/trivial.hpp>
-
-#include "ompl/mod/samplers/DijkstraSampler.h"
-#include "ompl/mod/samplers/HybridSampler.h"
-#include "ompl/mod/samplers/IntensityMapSampler.h"
+#include <memory>
+#include <mod/cliffmap.hpp>
+#include <mod/parameters.hpp>
+#include <mod/sample_sink.hpp>
+#include <string>
 
 namespace ompl {
 namespace MoD {
 
 enum class MapType { CLiFFMap = 0, STeFMap = 1, GMMTMap = 2, IntensityMap = 4, NOTSET = 101 };
 
-struct Cost {
-  /// The last computed distance cost
-  double cost_d_{0.0};
+/// The three unweighted components of a motion cost: Euclidean/steering distance, quaternion distance, MoD cost.
+struct CostComponents {
+  double d{0.0};
+  double q{0.0};
+  double c{0.0};
 
-  /// The last computed quaternion distance cost
-  double cost_q_{0.0};
-
-  /// The last computed MoD cost
-  double cost_c_{0.0};
-
-  inline Cost operator+(Cost b) const {
-    Cost result;
-    result.cost_c_ = this->cost_c_ + b.cost_c_;
-    result.cost_d_ = this->cost_d_ + b.cost_d_;
-    result.cost_q_ = this->cost_q_ + b.cost_q_;
-    return result;
+  inline CostComponents &operator+=(const CostComponents &o) {
+    d += o.d;
+    q += o.q;
+    c += o.c;
+    return *this;
+  }
+  inline CostComponents operator+(const CostComponents &o) const {
+    CostComponents r = *this;
+    r += o;
+    return r;
   }
 };
 
+/**
+ * Base class of the MoD objectives. Thread-safe: it holds no mutable per-call state; maps are shared as
+ * shared_ptr<const>. The cost of an edge is the sum over `n = max(1, ceil(distance / cost_step))` sub-segments,
+ * obtained by `space->interpolate`, of `w_d * d_i + w_q * q_i + w_c * c_i`, where `c_i` is the MoD cost at the end
+ * point of the sub-segment for the motion direction of that sub-segment (Paper IV, per-point cost).
+ */
 class MoDOptimizationObjective : public ompl::base::OptimizationObjective {
  protected:
-  /// The weight associated with Euclidean distance cost.
-  double weight_d_;
-
-  /// The weight associated with quaternion distance cost.
-  double weight_q_;
-
-  /// The weight associated with Down-The-CLiFF cost.
-  double weight_c_;
-
-  mutable Cost last_cost_;
-
+  ::MoD::OptObjParameters params_;
+  ::MoD::SamplerParameters sampler_params_;
   MapType map_type_{MapType::NOTSET};
 
-  std::string informed_sampler_type_;
+  double weight_d_{1.0};
+  double weight_q_{1.0};
+  double weight_c_{1.0};
 
-  std::string intensity_map_file_name_;
+  /// Interpolation step for the cost integral [m]. Set by the playground to min(MoD cell, pixel); the library
+  /// default is the cell size of the map given to the objective.
+  double cost_step_{1.0};
 
-  double sampler_bias_{0.05};
+  /// The intensity (q) map of the objective (empty if the objective has none).
+  ::MoD::IntensityMapConstPtr intensity_map_;
 
-  bool sampler_debug_{false};
+  /// The intensity map handed to the samplers: `sampler_params_.intensity_map_file` if set, else `intensity_map_`.
+  ::MoD::IntensityMapConstPtr sampler_intensity_map_;
 
-  bool uniform_valid_{false};
+  /// Optional sample sink handed to every sampler this objective allocates (not owned).
+  ::MoD::SampleSink *sample_sink_{nullptr};
 
-  double dijkstra_cell_size_{0.1};
+  MoDOptimizationObjective(const ompl::base::SpaceInformationPtr &si, const ::MoD::OptObjParameters &params,
+                           const ::MoD::SamplerParameters &sampler_params, MapType map_type,
+                           ::MoD::IntensityMapConstPtr intensity_map);
 
-  inline MoDOptimizationObjective(const ompl::base::SpaceInformationPtr &si, double weight_d, double weight_q,
-                                  double weight_c, MapType map_type, const std::string &sampler_type = "",
-                                  const std::string &intensity_map_file_name = "", double sampler_bias = 0.05,
-                                  bool uniform_valid = false, bool sampler_debug = false)
-      : ompl::base::OptimizationObjective(si),
-        weight_d_(weight_d),
-        weight_q_(weight_q),
-        weight_c_(weight_c),
-        map_type_(map_type),
-        sampler_bias_(sampler_bias),
-        sampler_debug_(sampler_debug),
-        uniform_valid_(uniform_valid),
-        dijkstra_cell_size_(0.25) {
-    informed_sampler_type_ = sampler_type;
-    this->intensity_map_file_name_ = intensity_map_file_name;
+  /// MoD cost at (x, y) for a motion in direction `alpha` (the velocity direction, not the robot heading).
+  virtual double modCost(double x, double y, double alpha) const = 0;
 
-  }
+  /// Cost components of one sub-segment a -> b.
+  CostComponents pointCost(const ompl::base::State *a, const ompl::base::State *b) const;
 
  public:
-  inline double getLastCostD() const { return last_cost_.cost_d_; }
-  inline double getLastCostQ() const { return last_cost_.cost_q_; }
-  inline double getLastCostC() const { return last_cost_.cost_c_; }
-  inline Cost getLastCost() const { return last_cost_; }
+  ~MoDOptimizationObjective() override = default;
 
-  inline void setDijkstraCellSize(double cell_size) { this->dijkstra_cell_size_ = cell_size; }
-  inline double getDijkstraCellSize() const { return dijkstra_cell_size_; }
+  inline void setCostStep(double metres) { cost_step_ = metres; }
+  inline double getCostStep() const { return cost_step_; }
 
-  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override = 0;
+  /// Replaces the intensity map handed to the samplers (to share a preloaded map).
+  inline void setSamplerIntensityMap(::MoD::IntensityMapConstPtr map) { sampler_intensity_map_ = std::move(map); }
+
+  /// Samplers allocated after this call record their draws into `sink` (may be null). Not owned.
+  inline void setSampleSink(::MoD::SampleSink *sink) { sample_sink_ = sink; }
+  inline ::MoD::SampleSink *getSampleSink() const { return sample_sink_; }
+
+  inline const ::MoD::OptObjParameters &getParameters() const { return params_; }
+  inline const ::MoD::SamplerParameters &getSamplerParameters() const { return sampler_params_; }
+  inline const ::MoD::IntensityMapConstPtr &getIntensityMap() const { return intensity_map_; }
+  inline const ::MoD::IntensityMapConstPtr &getSamplerIntensityMap() const { return sampler_intensity_map_; }
+
+  /// Unweighted components of `motionCost(s1, s2)`, computed with the same interpolation.
+  virtual CostComponents motionCostComponents(const ompl::base::State *s1, const ompl::base::State *s2) const;
+
+  ompl::base::Cost motionCost(const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  ompl::base::Cost stateCost(const ompl::base::State *s) const override;
+  ompl::base::Cost motionCostHeuristic(const ompl::base::State *s1, const ompl::base::State *s2) const override;
+  bool isSymmetric() const override { return false; }
 
   ompl::base::InformedSamplerPtr allocInformedStateSampler(const ompl::base::ProblemDefinitionPtr &probDefn,
-                                                           unsigned int maxNumberCalls) const override {
-    OMPL_INFORM("MoDOptimization Objective will use %s for Informed Sampling...", this->informed_sampler_type_.c_str());
-    if (this->informed_sampler_type_.find("dijkstra") != std::string::npos) {
-      OMPL_INFORM("MoDOptimization Objective will use Dijkstra Sampling...");
-      return ompl::MoD::DijkstraSampler::allocate(probDefn, maxNumberCalls, dijkstra_cell_size_, sampler_bias_,
-                                                  sampler_debug_);
-    } else if (this->informed_sampler_type_ == "intensity") {
-      OMPL_INFORM("MoDOptimization Objective will use intensity-map Sampling...");
-      return ompl::MoD::IntensityMapSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, sampler_bias_,
-                                                      sampler_debug_);
-    } else if (this->informed_sampler_type_ == "ellipse") {
-      OMPL_INFORM("MoDOptimization Objective will use ellipsoidal heuristic...");
-      return std::make_shared<ompl::base::PathLengthDirectInfSampler>(probDefn, maxNumberCalls);
-    } else if (this->informed_sampler_type_.find("hybrid") != std::string::npos) {
-      OMPL_INFORM(
-          "MoDOptimization Objective will use the hybrid sampler. This combines Intensity, Dijkstra and Ellipse");
-      return ompl::MoD::HybridSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, dijkstra_cell_size_,
-                                                sampler_bias_, 0.01, uniform_valid_, sampler_debug_);
-    } else {
-      OMPL_INFORM(
-          "informed_sampler_type = %s is not available for "
-          "MoDOptimizationObjective, defaulting to rejection sampling.",
-          (informed_sampler_type_.empty() or informed_sampler_type_ == "iid") ? "<empty> or iid"
-                                                                              : informed_sampler_type_.c_str());
-      return ompl::MoD::IntensityMapSampler::allocate(probDefn, maxNumberCalls, intensity_map_file_name_, 0.0,
-                                                      sampler_debug_);
-    }
-  }
+                                                           unsigned int maxNumberCalls) const override;
 
-  inline std::string getMapTypeStr() const {
-    if (this->weight_c_ == 0.0)
-      return "RRTStar";
-    else
-      switch (map_type_) {
-        case MapType::STeFMap:return "STeF-map";
-        case MapType::GMMTMap:return "GMMT-map";
-        case MapType::CLiFFMap:return "CLiFF-map";
-        case MapType::IntensityMap:return "intensity-map";
-        default:return "Not set.";
-      }
-  }
+  std::string getMapTypeStr() const;
   inline MapType getMapType() const { return map_type_; }
 };
 

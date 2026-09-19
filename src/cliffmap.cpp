@@ -18,25 +18,14 @@
  */
 
 #include <Eigen/Dense>
-#include <boost/log/trivial.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <cmath>
 #include <iostream>
 #include <mod/cliffmap.hpp>
+#include <mod/log.hpp>
 
 namespace MoD {
-
-IntensityMap::IntensityMap(const IntensityMap &intensityMap) {
-  this->rows_ = intensityMap.rows_;
-  this->columns_ = intensityMap.columns_;
-  this->x_max_ = intensityMap.x_max_;
-  this->y_max_ = intensityMap.y_max_;
-  this->x_min_ = intensityMap.x_min_;
-  this->y_min_ = intensityMap.y_min_;
-  this->cell_size_ = intensityMap.cell_size_;
-  this->values_ = intensityMap.values_;
-}
 
 void IntensityMap::readFromXML(const std::string &fileName) {
   using boost::property_tree::ptree;
@@ -123,30 +112,35 @@ void CLiFFMap::readFromXML(const std::string &fileName) {
     }
     this->locations_.push_back(location);
   }
-  BOOST_LOG_TRIVIAL(info) << "Read a cliffmap from XML" << std::endl;
-
-  // Frame ID:
-  BOOST_LOG_TRIVIAL(info) << "Frame ID for cliffmap is: " << frame_id_;
+  MOD_LOG("Read a CLiFF-map with %zu locations from %s", locations_.size(), fileName.c_str());
 }
 
-CLiFFMapLocation CLiFFMap::at(size_t row, size_t col) const {
-  if (row >= rows_ || col >= columns_) {
-    return CLiFFMapLocation();
-  }
+namespace {
+const CLiFFMapLocation &emptyLocation() {
+  static const CLiFFMapLocation empty{};
+  return empty;
+}
+}  // namespace
 
-  return locations_[row * columns_ + col];
+const CLiFFMapLocation &CLiFFMap::at(size_t row, size_t col) const {
+  if (row >= static_cast<size_t>(rows_) || col >= static_cast<size_t>(columns_)) return emptyLocation();
+  const size_t idx = row * static_cast<size_t>(columns_) + col;
+  if (idx >= locations_.size()) return emptyLocation();
+  return locations_[idx];
 }
 
-CLiFFMapLocation CLiFFMap::atId(size_t id) const { return locations_[id - (size_t)1]; }
+const CLiFFMapLocation &CLiFFMap::atId(size_t id) const {
+  if (id == 0 || id > locations_.size()) return emptyLocation();
+  return locations_[id - 1];
+}
 
-CLiFFMapLocation CLiFFMap::operator()(double x, double y) const {
-  size_t row = y2index(y);
-  size_t col = x2index(x);
-  return this->at(row, col);
+const CLiFFMapLocation &CLiFFMap::operator()(double x, double y) const {
+  if (x < x_min_ || y < y_min_) return emptyLocation();
+  return this->at(y2index(y), x2index(x));
 }
 
 double CLiFFMap::getLikelihood(double x, double y, double heading, double speed) const {
-  CLiFFMapLocation loc = (*this)(x, y);
+  const CLiFFMapLocation &loc = (*this)(x, y);
   Eigen::Vector2d V;
   V[0] = heading;
   V[1] = speed;
@@ -174,7 +168,7 @@ double CLiFFMap::getLikelihood(double x, double y, double heading, double speed)
 }
 
 double CLiFFMap::getBestHeading(double x, double y) const {
-  CLiFFMapLocation loc = (*this)(x, y);
+  const CLiFFMapLocation &loc = (*this)(x, y);
 
   double best_likelihood = 0.0;
   double best_heading = 0.0;
@@ -208,10 +202,9 @@ void CLiFFMap::organizeAsGrid() {
   organizedLocations.resize(rows_ * columns_);
 
   if (organizedLocations.size() != locations_.size()) {
-    BOOST_LOG_TRIVIAL(warning) << "[CLiFFMap] Error in number of locations. We thought it was "
-                               << organizedLocations.size() << ", but it was " << locations_.size() << ".";
+    MOD_LOG("CLiFFMap::organizeAsGrid: expected %zu locations from the bounds, file has %zu",
+            organizedLocations.size(), locations_.size());
     if (organizedLocations.size() < locations_.size()) return;
-    BOOST_LOG_TRIVIAL(warning) << "Less is more. We have the space. Let's continue... ";
   }
 
   for (const CLiFFMapLocation &location : locations_) {
@@ -226,14 +219,16 @@ void CLiFFMap::organizeAsGrid() {
       organizedLocations[idx].q = location.q;
       organizedLocations[idx].position = location.position;
     } else {
-      BOOST_LOG_TRIVIAL(info) << 1, "Some new locations were added while organizing...";
+      MOD_LOG("CLiFFMap::organizeAsGrid: location %zu at (%.2f, %.2f) is outside the grid, appended", location.id,
+              location.position[0], location.position[1]);
       organizedLocations.push_back(location);
     }
   }
   locations_ = organizedLocations;
   organized_ = true;
 
-  BOOST_LOG_TRIVIAL(info) << "[CLiFFMap] Organized a cliffmap with resolution: " << getResolution() << " m/cell.";
+  MOD_LOG("Organized a CLiFF-map as a %zu x %zu grid at %.3f m/cell", static_cast<size_t>(rows_),
+          static_cast<size_t>(columns_), getResolution());
 }
 
 }  // namespace MoD

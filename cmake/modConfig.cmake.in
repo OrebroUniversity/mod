@@ -1,24 +1,11 @@
-# CMake MOD module
-#
-# It defines the following variables:
-# MOD_FOUND         - TRUE
-# MOD_INCLUDE_DIRS  - The MOD include directory
-# MOD_LIBRARIES     - The MOD library
-# MOD_VERSION       - The MOD version in the form <major>.<minor>.<patchlevel>
-# MOD_MAJOR_VERSION - Major version
-# MOD_MINOR_VERSION - Minor version
-# MOD_PATCH_VERSION - Patch version
-
+# CMake config for the mod library. Provides the imported target mod::mod.
 @PACKAGE_INIT@
 
-set(mod_VERSION @PROJECT_VERSION@)
-set(mod_MAJOR_VERSION @PROJECT_VERSION_MAJOR@)
-set(mod_MINOR_VERSION @PROJECT_VERSION_MINOR@)
-set(mod_PATCH_VERSION @PROJECT_VERSION_PATCH@)
+include(CMakeFindDependencyMacro)
+find_dependency(Boost)
+find_dependency(Eigen3)
+find_dependency(ompl)
+find_dependency(nlohmann_json)
 
-set_and_check(mod_INCLUDE_DIRS @PACKAGE_INCLUDE_INSTALL_DIR@)
-set_and_check(mod_LIBRARY_DIR @PACKAGE_LIB_INSTALL_DIR@)
-find_library(mod_LIBRARIES NAMES mod.${MOD_VERSION} mod PATHS ${mod_LIBRARY_DIR} NO_DEFAULT_PATH)
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(mod DEFAULT_MSG mod_INCLUDE_DIRS mod_LIBRARIES)
+include("${CMAKE_CURRENT_LIST_DIR}/modTargets.cmake")
+check_required_components(mod)
