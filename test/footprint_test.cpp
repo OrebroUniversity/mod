@@ -47,7 +47,7 @@ struct Fixture {
 
 TEST(Footprint, DiscSizeMatchesRadius) {
   Fixture f(0.3);
-  // pi r^2 / res^2 = 28.3; the rasterised disc of pixel centres has 29 pixels.
+  // pi r^2 / res^2 = 28.3; the rasterized disc of pixel centres has 29 pixels.
   EXPECT_NEAR(static_cast<double>(f.checker->discPixels()), M_PI * 0.3 * 0.3 / 0.01, 3.0);
   EXPECT_DOUBLE_EQ(f.checker->radius(), 0.3);
 }

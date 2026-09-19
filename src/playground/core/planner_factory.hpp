@@ -42,7 +42,7 @@ struct PlannerSetup {
   std::shared_ptr<FootprintChecker> checker;
   ompl::base::ProblemDefinitionPtr pdef;
   ompl::base::OptimizationObjectivePtr objective;
-  /// The objective as a MoD objective; null for `path_length`.
+  /// The objective as an MoD objective; null for `path_length`.
   ompl::MoD::MoDOptimizationObjectivePtr mod_objective;
   /// The OMPL planner (RRT* / AIT*); null for `hybrid_astar`.
   ompl::base::PlannerPtr planner;

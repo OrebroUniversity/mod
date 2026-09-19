@@ -30,7 +30,7 @@
 namespace MoD::playground {
 
 /**
- * Footprint test with one circumscribed circle: the rasterised disc of pixels of the given radius around the
+ * Footprint test with one circumscribed circle: the rasterized disc of pixels of the given radius around the
  * pose is tested against the occupancy map (offset list precomputed once). Yaw is irrelevant. A pose is valid
  * iff it satisfies the state bounds and no pixel of the disc is occupied (pixels outside the map count as
  * occupied).

@@ -42,7 +42,7 @@ using namespace MoD::playground;
 
 namespace {
 
-/// Forwards to a MoD objective and records, per `motionCost` call, the edge length and the cost point count.
+/// Forwards to an MoD objective and records, per `motionCost` call, the edge length and the cost point count.
 class CountingObjective : public ob::OptimizationObjective {
  public:
   CountingObjective(const ob::SpaceInformationPtr &si, ompl::MoD::MoDOptimizationObjectivePtr inner)

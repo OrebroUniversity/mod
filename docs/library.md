@@ -21,7 +21,7 @@ Two namespaces: `MoD` for the library's own types and `ompl::MoD` for the OMPL-d
 ## Maps
 
 ```cpp
-MoD::CLiFFMap cliff("maps/atc/atc_cliff.xml", /*organize=*/true);   // organised = grid lookup by (x, y)
+MoD::CLiFFMap cliff("maps/atc/atc_cliff.xml", /*organize=*/true);   // organized = grid lookup by (x, y)
 const MoD::CLiFFMapLocation &loc = cliff(x, y);                      // static empty location when out of range
 for (const auto &d : loc.distributions) d.getMeanHeading(), d.getMeanSpeed(), d.getMixingFactor(), d.getCovariance();
 cliff.getBestHeading(x, y); cliff.getLikelihood(x, y, heading, speed);
@@ -97,8 +97,8 @@ planner.pathDirections();             // forward / reverse per path segment
 planner.heuristic(state);             // h for the last goal (also heuristicGrid / heuristicKinematic)
 ```
 
-`objective` may be any `ompl::base::OptimizationObjectivePtr` (a MoD objective or OMPL's path length);
-`w_d` for the kinematic heuristic is read from a MoD objective's parameters, else 1. The state space must be
+`objective` may be any `ompl::base::OptimizationObjectivePtr` (an MoD objective or OMPL's path length);
+`w_d` for the kinematic heuristic is read from an MoD objective's parameters, else 1. The state space must be
 SE(2)-based; reverse motion is enabled only on `ReedsSheppStateSpace`. `solve` may be called repeatedly. The
 path is empty on failure; `result().termination` says why (`time`, `cancelled`, `max_expansions`,
 `exhausted`, `invalid`).

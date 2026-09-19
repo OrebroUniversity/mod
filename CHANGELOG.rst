@@ -20,7 +20,7 @@ Library
     ``si->checkMotion`` at the inferred pixel step, g-cost by ``objective->motionCost`` (the objective integrates
     along the arc through the space's own interpolation).
   - ``h = max(h_grid, h_kin)``: ``h_grid`` is a goal-rooted, lazily expanded ``GridDijkstra`` in reverse mode with
-    ``motionCost`` as edge weight (obstacle- and MoD-aware); ``h_kin = w_d * Dubins distance``, memoised per key.
+    ``motionCost`` as edge weight (obstacle- and MoD-aware); ``h_kin = w_d * Dubins distance``, memoized per key.
   - Analytic expansion on Nav2's schedule (a shot every ``max(1, floor(h_kin / (3.5 * primitive length)))``
     expansions, only if at most 5 m long); the first valid shot ends the search. Goal test: shot, or same cell and
     bin as the goal (then connected to the exact goal when ``checkMotion`` allows).
@@ -135,7 +135,7 @@ Library
 Playground (``src/playground``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * ``mod_playground`` core: ``OccupancyMap`` (map_server yaml + P5 pgm), ``FootprintChecker`` (one circumscribed
-  circle, rasterised disc of pixels), ``MapCache`` (maps loaded once per process), ``PlannerFactory`` (Dubins /
+  circle, rasterized disc of pixels), ``MapCache`` (maps loaded once per process), ``PlannerFactory`` (Dubins /
   Reeds-Shepp, RRT* / AIT*, collision resolution = pixel / extent, objective and sampler from the parameter structs,
   fills ``Derived``), ``Solver`` (termination by time or cancel, time to first solution from the intermediate
   solution callback), ``RunLogger`` (one folder per run with ``config.json``, ``solution.json`` and optional

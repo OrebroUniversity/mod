@@ -2,10 +2,9 @@
 
 `mod` lets a motion planner **follow the flow of people** instead of only avoiding walls. It reads a *Map of
 Dynamics* (MoD) of a place, such as a shopping centre where thousands of pedestrian tracks were recorded, and
-turns it into a cost that an [OMPL](https://ompl.kavrakilab.org) planner can optimise: paths that go *with* the
-crowd are cheap, paths that cut across it or push upstream are expensive. It also ships informed samplers that
-draw planner samples where people actually walk, a Hybrid A* planner that optimises the same cost, and a
-**playground** for running and comparing all of this on real maps, with logs and plots.
+turns it into a cost that an [OMPL](https://ompl.kavrakilab.org) planner can optimize: paths that go *with* the
+crowd are cheap, paths that cut across it or push upstream are expensive. It also ships informed samplers that use that same cost to steer the planner's
+sampling towards low-cost solutions, a Hybrid A* planner that optimizes the same cost, and a **playground** for running and comparing all of this on real maps, with logs and plots.
 
 If you just want to see it work, go to [Quick start](#quick-start). If you want the theory, read
 [docs/concepts.md](docs/concepts.md) and the papers under [Background reading](#background-reading).
@@ -17,8 +16,8 @@ If you just want to see it work, go to [Quick start](#quick-start). If you want 
 | Part | What it does | Where |
 |---|---|---|
 | **MoD map readers** | CLiFF-map (Gaussian flow field), GMMT-map (Gaussian-mixture trajectory clusters), intensity map (how busy each cell is) | `include/mod/cliffmap.hpp`, `gmmtmap.hpp` |
-| **Objectives** | OMPL optimisation objectives: Down-The-CLiFF, upstream criterion (CLiFF or GMMT), intensity, plus plain path length | `include/ompl/mod/objectives/` |
-| **Samplers** | Informed samplers: intensity-weighted, Dijkstra-path biased, and the hybrid of the two with an ellipsoid fallback | `include/ompl/mod/samplers/` |
+| **Objectives** | OMPL optimization objectives: Down-The-CLiFF, upstream criterion (CLiFF or GMMT), intensity, plus plain path length | `include/ompl/mod/objectives/` |
+| **Samplers** | Informed samplers that bias the planner's sampling with its own cost function: Dijkstra path, intensity map, ellipsoidal heuristic, and their hybrid | `include/ompl/mod/samplers/` |
 | **Hybrid A\*** | Deterministic grid-and-primitive planner over the same maps, footprint and cost as the sampling planners | `include/mod/planners/hybrid_astar.hpp` |
 | **Playground** | Headless batch runner with JSON logs, an ImGui app with map overlays, and Python plots | `src/playground/`, `analysis/` |
 | **Maps** | Ready-to-use environments: the ATC shopping centre, a simulated warehouse and a simulated office | `maps/` |
@@ -84,7 +83,7 @@ smp.type = MoD::SamplerType::dijkstra;
 
 auto objective = std::make_shared<ompl::MoD::UpstreamCriterionOptimizationObjective>(si, obj, smp);
 objective->setCostStep(0.05);              // metres between cost points along an edge
-pdef->setOptimizationObjective(objective); // RRT*, AIT*, ... now optimise the MoD cost
+pdef->setOptimizationObjective(objective); // RRT*, AIT*, ... now optimize the MoD cost
 ```
 
 Link `mod::mod` (via `find_package(mod)` after `cmake --install`, or `add_subdirectory`). The objective allocates
@@ -92,13 +91,14 @@ the informed sampler the planner asks for. More in [docs/library.md](docs/librar
 
 ## How it works in one paragraph
 
-A MoD stores, per location, how people move there: a CLiFF-map keeps a mixture of Gaussians over (heading,
+An MoD stores, per location, how people move there: a CLiFF-map keeps a mixture of Gaussians over (heading,
 speed); a GMMT-map keeps clusters of typical trajectories; an intensity map keeps how often the cell is visited.
 The objectives integrate a cost along every planner edge at a fixed step: the steering distance, a small heading
 term, and the MoD term evaluated at each point for the *direction the robot moves* (not the way it faces, so
-reversing is costed like driving). The samplers exploit the same maps to propose states where a good path is
-likely, which is what makes RRT* and AIT* find low-cost paths fast. Hybrid A* expands short arcs on a grid, costs
-them with the identical objective and uses a MoD-aware Dijkstra cost-to-go as its heuristic, so its single
+reversing is costed like driving). The samplers do not look for where people walk: they use the planner's own cost function to concentrate
+samples where a low-cost solution is likely (cells of a Dijkstra path under the MoD cost, cells weighted by the
+intensity map, or the ellipse defined by the best cost so far), which is what makes RRT* and AIT* converge fast. Hybrid A* expands short arcs on a grid, costs
+them with the identical objective and uses an MoD-aware Dijkstra cost-to-go as its heuristic, so its single
 deterministic answer is directly comparable with the sampling planners. Details, formulas and defaults:
 [docs/concepts.md](docs/concepts.md) and [docs/parameters.md](docs/parameters.md).
 

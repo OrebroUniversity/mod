@@ -1,6 +1,6 @@
 # Parameter reference
 
-All parameters live in `include/mod/parameters.hpp` as plain structs with nlohmann JSON (de)serialisation.
+All parameters live in `include/mod/parameters.hpp` as plain structs with nlohmann JSON (de)serialization.
 `from_json` starts from the defaults and overrides only the keys present, so partial objects are accepted
 everywhere (batch JSON, `--config`, your own code). Enum values are the strings shown. Defaults equal the settings
 of the published experiments unless noted.
@@ -97,7 +97,7 @@ default rectangle. There is no resolution field: the collision step and the cost
 
 ## `RunConfig`
 
-The aggregate of all scopes above; `config.json` is its serialisation:
+The aggregate of all scopes above; `config.json` is its serialization:
 
 ```json
 {

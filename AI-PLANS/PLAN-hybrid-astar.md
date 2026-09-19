@@ -14,7 +14,7 @@
 ## Implementation notes (deviations from the text below, decided while building)
 - Constructor: `HybridAStar(si, ompl::base::OptimizationObjectivePtr, HybridAStarParameters, turning_radius)`. The
   objective is the OMPL base type so the `path_length` objective (a plain `PathLengthOptimizationObjective`) works
-  as in the tests; `w_d` for `h_kin` is read from the objective when it is a MoD objective, else 1. The turning
+  as in the tests; `w_d` for `h_kin` is read from the objective when it is an MoD objective, else 1. The turning
   radius is a constructor argument because OMPL's Dubins / Reeds-Shepp spaces do not expose theirs.
 - `allow_reverse` defaults to `true` in the struct and is forced off unless the space is Reeds-Shepp, which gives
   the intended "false under Dubins, true under Reeds-Shepp" without a tri-state; the factory writes the effective
@@ -28,7 +28,7 @@
 - The first primitive out of the start pays no cusp penalty (the robot is stationary; its direction is free).
 - Duplicate detection keeps one node per key with the best g (updated in place, lazy deletion in the open list);
   the goal test ignores the direction bit.
-- OMPL's SO(2) bounds are `[-pi, pi)`: the planner normalises yaws into that range; a scenario yaw of exactly `pi`
+- OMPL's SO(2) bounds are `[-pi, pi)`: the planner normalizes yaws into that range; a scenario yaw of exactly `pi`
   must be given as `-pi`.
 - Batch: `BatchSpec` has one `hybrid_astar` scope copied into every run (`maps/atc/batch_atc_hybrid.json`).
 
@@ -39,7 +39,7 @@ Same as PLAN.md: first unchecked milestone, only that milestone, tests green, on
 | Topic | Decision |
 |---|---|
 | Class | `mod::HybridAStar` in `include/mod/planners/hybrid_astar.hpp`, constructed from `ompl::base::SpaceInformationPtr`, `MoDOptimizationObjectivePtr`, `HybridAStarParameters`. `solve(start, goal, time_budget_s) → ompl::geometric::PathGeometric`. |
-| Heuristic | `h = max(h_grid, h_kin)`. `h_grid`: `GridDijkstra` rooted at the goal in reverse mode with the objective's `motionCost` as edge weight (obstacle- and MoD-aware). `h_kin`: `w_d × dubins_space->distance(state, goal)`, memoised per (cell, bin). Inadmissibility of `h_grid` (octile overestimate up to 8 %, eight-heading MoD term) is accepted, as Nav2 accepts its own. |
+| Heuristic | `h = max(h_grid, h_kin)`. `h_grid`: `GridDijkstra` rooted at the goal in reverse mode with the objective's `motionCost` as edge weight (obstacle- and MoD-aware). `h_kin`: `w_d × dubins_space->distance(state, goal)`, memoized per (cell, bin). Inadmissibility of `h_grid` (octile overestimate up to 8 %, eight-heading MoD term) is accepted, as Nav2 accepts its own. |
 | Discretisation | Search cell 0.25 m, 72 angle bins (5°); both parameters. Nodes keep their exact continuous pose; the cell × bin key is only for duplicate detection. |
 | Primitives | Three per node: straight, left, right at the vehicle's minimum turning radius; arc length `= cell × √2` so every primitive leaves its cell (Nav2's rule). Endpoint pose computed analytically; validity by `si->checkMotion(a, b)` at the inferred pixel step; g-cost by `objective->motionCost(a, b)` (the Dubins/RS interpolation between two poses on one minimum-radius arc is that arc, so the objective integrates along the primitive). |
 | Analytic expansion | Nav2 scheme: attempt a Dubins shot from the expanded node to the goal when `expansions_since_last_attempt ≥ max(1, floor(h_kin / (ratio × primitive_length)))`, `ratio = 3.5`; only if the shot length ≤ `analytic_max_length_m` (default 5). Shot checked with `checkMotion`, costed with `motionCost`. First valid shot ends the search. |
@@ -60,7 +60,7 @@ Same as PLAN.md: first unchecked milestone, only that milestone, tests green, on
 - [x] Node store: `std::vector<Node{pose[3], g, h, parent, dir}>`; open list `std::priority_queue` of `(f, index)` with lazy deletion; closed set `std::unordered_set<uint64_t>` keyed by `(col, row, bin)`; bin = `round(yaw / (2π / bins)) mod bins`.
 - [x] Primitive generator: for a pose and turning radius r, straight `(L)`, left/right arcs of length L on radius r; endpoint pose closed-form. Reject primitives leaving the state bounds.
 - [x] Main loop: pop best f; skip if closed; goal test; analytic-expansion schedule; expand three primitives: `checkMotion`, `g' = g + motionCost(a,b).value()`, `h'` as above, push. Wall-clock check every 256 expansions.
-- [x] `h_kin` uses a private `DubinsStateSpace(r)` regardless of the run's state space (forward-only, see top); memoised in an `unordered_map<uint64_t,double>` keyed like the closed set.
+- [x] `h_kin` uses a private `DubinsStateSpace(r)` regardless of the run's state space (forward-only, see top); memoized in an `unordered_map<uint64_t,double>` keyed like the closed set.
 - [x] Path extraction by parent chain; states allocated from `si`.
 - [x] Tests (`test/hybrid_astar_test.cpp`, synthetic maps through the M4 `OccupancyMap` + `FootprintChecker`, path-length and intensity objectives):
   - empty 20×20 m map, start (2,2,0) → goal (18,18,0): solved, every path state valid, cost within 10 % of the Dubins distance × `w_d`.

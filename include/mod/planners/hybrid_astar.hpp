@@ -55,7 +55,7 @@ namespace MoD {
  *   minimum-radius arc is that arc, so the objective integrates along the primitive).
  * - Heuristic: `h = max(h_grid, h_kin)`; `h_grid` is a goal-rooted, lazily expanded GridDijkstra with the
  *   objective's `motionCost` as edge weight; `h_kin` is `w_d * Dubins distance` (forward-only) or, with reverse
- *   motion, `w_d * min(Dubins, Reeds-Shepp length + change_penalty * cusps)`, memoised per key.
+ *   motion, `w_d * min(Dubins, Reeds-Shepp length + change_penalty * cusps)`, memoized per key.
  * - Analytic expansion (Nav2 schedule): a Dubins (or Reeds-Shepp) shot to the goal every
  *   `max(1, floor(h_kin / (analytic_ratio * primitive_length)))` expansions if its length is at most
  *   `analytic_max_length_m`; the first valid shot ends the search.

@@ -5,7 +5,7 @@ of a small step (`atan2(Δy, Δx)`), which is not the same as the heading `θ` w
 
 ## Maps of Dynamics
 
-A Map of Dynamics (MoD) summarises how people move through a place, learned from recorded trajectories. Three
+A Map of Dynamics (MoD) summarizes how people move through a place, learned from recorded trajectories. Three
 representations are supported, each read from an XML file:
 
 | Map | Content per location | Class | Used by |
@@ -54,20 +54,23 @@ experiments had about 7, so the MoD term weighs roughly 3× more relative to dis
 
 ## Samplers
 
-An OMPL *informed sampler* proposes states to RRT* (and is asked for by AIT* only through the objective's
-heuristic). The objective allocates the sampler named in `SamplerParameters`:
+The sampling step decides which subset of the state space a sampling-based planner explores; choosing it well
+gives faster convergence and better solutions. The samplers here do **not** draw states where people move. They
+use the planner's own cost function to concentrate samples where a low-cost solution is likely. Each is an OMPL
+*informed sampler*; the objective allocates the one named in `SamplerParameters` for RRT* and AIT*:
 
 | Type | Draw |
 |---|---|
-| `iid` | uniform over the valid cells of the intensity map when one is configured (as in the papers), else OMPL rejection sampling over the bounds |
-| `ellipse` | OMPL's `PathLengthDirectInfSampler`: uniform until a solution exists, then inside the ellipsoid whose transverse diameter is the current best *full MoD cost* |
-| `intensity` | with probability `bias` a cell drawn proportional to `1 − q` (quiet cells preferred), otherwise a uniform valid cell; position uniform inside the cell, heading uniform |
-| `dijkstra` | with probability `bias` a cell of the Dijkstra shortest path under the planner's own objective on a grid of `dijkstra_cell_size`, heading towards the next path cell ± π/8; otherwise uniform |
+| `iid` | uniform over the collision-free cells of the intensity map's grid when one is configured (as in the papers), else OMPL rejection sampling over the bounds |
+| `ellipse` | the Admissible Ellipsoidal Heuristic (Gammell et al.; OMPL's `PathLengthDirectInfSampler`): uniform until a first solution exists, then inside the ellipse whose transverse diameter is the cost of the best solution so far, here the *full MoD cost*. Paper IV gives the geometric proof that the heuristic stays admissible with MoD costs. |
+| `intensity` | importance sampling over the collision-free cells of the intensity map (Paper IV's improvement of Paper I's rejection sampling): with probability `bias` a cell is drawn with probability proportional to `1 − q`, so cells with less recorded motion are more likely; otherwise a uniform collision-free cell. Position uniform inside the cell, heading uniform. |
+| `dijkstra` | the two-stage strategy of Palmieri et al. extended to any MoD: a grid of `dijkstra_cell_size` over the state bounds, each cell connected to its eight neighbours, every edge costed with the planner's cost function (distance and heading terms plus the MoD cost at the end of the segment; cells with no MoD data cost only distance), the shortest path by Dijkstra search; then with probability `bias` a cell of that path with the heading towards the next path cell ± π/8, otherwise a uniform cell and heading |
 | `hybrid` | `bias` → Dijkstra, `hybrid_intensity_bias` → intensity, otherwise the ellipse sampler |
 
 `intensity`, `hybrid` and the cell-uniform `iid` need an intensity map: `SamplerParameters.intensity_map_file`,
-or, if empty, the objective's. The Dijkstra grid uses one validity check per node (the footprint is a circle) and
-`motionCost` as the edge weight, so it is obstacle- and flow-aware; on ATC at 0.5 m it sets up in about 70 ms.
+or, if empty, the objective's. The Dijkstra grid uses one validity check per node (the footprint is a circle) and `motionCost` as the edge
+weight, so the path it biases towards is the low-cost route through the flow, not the busiest one; on ATC at
+0.5 m it sets up in about 70 ms.
 With `log_samples` every draw is written to `samples.json` with its source.
 
 ## Planners
@@ -94,7 +97,7 @@ objective, so its cost is comparable with the sampling planners'.
   `motionCost` (the Dubins / Reeds-Shepp interpolation between the two endpoints of such an arc is that arc).
 - **Heuristic** `h = max(h_grid, h_kin)`. `h_grid` is a goal-rooted Dijkstra on the search grid with `motionCost`
   as edge weight, expanded lazily as the search touches cells, so it knows about walls and flow. `h_kin` is the
-  Dubins distance times `w_d`, memoised per key. Neither is strictly admissible (accepted, as Nav2 does); the
+  Dubins distance times `w_d`, memoized per key. Neither is strictly admissible (accepted, as Nav2 does); the
   returned cost is measured, not assumed optimal.
 - **Analytic expansion** (Nav2's schedule): every `max(1, floor(h_kin / (analytic_ratio × primitive length)))`
   expansions a Dubins (or Reeds-Shepp) shot to the goal is tried when it is at most `analytic_max_length_m` long;
